@@ -1,9 +1,11 @@
-# Team working agreement
+﻿# Team working agreement
 
-- Team and repository (`mlops-<session>-<team-name>-bike-demand`): ________
-- Members: ________
-- Current driver / reviewer / evidence recorder: ________
-- Fourth member's temporary responsibility, if applicable: ________
+- Team and repository: Vanta — [mlops-fri1-vanta-bike-demand](https://github.com/Jeromsan/mlops-fri1-vanta-bike-demand).
+- Members: Jeromsan JUDES RAMESH, Merwane KHELOUFI and Yvan FEUGANG.
+- Author of the fix: Jeromsan JUDES RAMESH.
+- PR reviewer before merge: Merwane KHELOUFI.
+- Evidence and screenshots: Jeromsan JUDES RAMESH.
+- Fourth member: not applicable; team of three.
 
 ## Workflow
 
@@ -16,6 +18,7 @@
 
 ## Support and handover
 
-- Approved support route / supported workstation: ________
-- How to report a setup or repository-access blocker: ________
-- Next driver and unfinished work: ________
+- Instructor contact route and backup workstation: to be defined.
+- How to report a setup or access blocker: to be defined.
+- Next author and reviewer for Lab 2: to be defined.
+- Remaining Lab 1 work: confirm preflight and tool versions, open the PR and obtain Merwane's review before merging.
