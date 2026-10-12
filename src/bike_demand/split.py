@@ -10,10 +10,20 @@ WINDOWS = {
 
 
 def split_data(frame: pd.DataFrame) -> dict[str, pd.DataFrame]:
-    raise NotImplementedError(
-        "TODO(Week 1, Lab 2): assign sorted, nonempty, disjoint and "
-        "complete partitions. See README 'Expected failures'."
-    )
+    ordered = frame.sort_values(["dteday", "hr", "instant"])
+    assignments = pd.Series(0, index=ordered.index)
+    partitions = {}
+    for name, (start, end) in WINDOWS.items():
+        mask = ordered["dteday"].between(start, end)
+        assignments += mask.astype(int)
+        partitions[name] = ordered.loc[mask].copy()
+    if (assignments > 1).any():
+        raise ValueError("split: partitions must be disjoint")
+    if (assignments != 1).any():
+        raise ValueError("split: partitions must be complete")
+    if any(part.empty for part in partitions.values()):
+        raise ValueError("split: partitions must be nonempty")
+    return partitions
 
 
 def partition_summary(partitions: dict[str, pd.DataFrame]) -> dict:
