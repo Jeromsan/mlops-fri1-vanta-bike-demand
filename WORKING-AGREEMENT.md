@@ -20,5 +20,5 @@
 
 - Instructor contact route and backup workstation: to be defined.
 - How to report a setup or access blocker: to be defined.
-- Next author and reviewer for Lab 2: to be defined.
+- Lab 2 author and evidence recorder: Jeromsan JUDES RAMESH; designated reviewer: Merwane KHELOUFI. Roles remain the same as Lab 1.
 - Remaining Lab 1 work: confirm preflight and tool versions, open the PR and obtain Merwane's review before merging.
