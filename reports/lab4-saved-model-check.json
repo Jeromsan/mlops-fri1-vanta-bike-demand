@@ -1,0 +1,33 @@
+{
+  "transport": "local TestClient (not Docker or remote CI)",
+  "artifact_sha256": "fd98ceafc57a5babce61ce703cbf9cb8d1f83c6820b0b34fe30ad1a0fc49c304",
+  "model_version": "baseline-df42e666d6d6",
+  "training_commit": "3b00e6018ac416a1d7d145fe85caa0270cccd231",
+  "training_working_tree_dirty": true,
+  "validation_mae_recomputed": 86.84685685591091,
+  "validation_mae_recorded": 86.84685685591091,
+  "request": {
+    "season": 1,
+    "yr": 0,
+    "mnth": 1,
+    "hr": 12,
+    "holiday": 0,
+    "weekday": 2,
+    "workingday": 1,
+    "weathersit": 1,
+    "temp": 0.5,
+    "atemp": 0.5,
+    "hum": 0.5,
+    "windspeed": 0.0
+  },
+  "status_code": 200,
+  "response": {
+    "prediction": 149.2911970908957,
+    "model_version": "baseline-df42e666d6d6"
+  },
+  "health": {
+    "status": "ok",
+    "model_version": "baseline-df42e666d6d6"
+  },
+  "invalid_request_status": 422
+}

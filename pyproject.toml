@@ -4,6 +4,9 @@ version = "0.1.0"
 description = "Local CPU MLOps starter for Week 1, Labs 1–2"
 requires-python = ">=3.12,<3.13"
 dependencies = [
+    "fastapi>=0.115,<1",
+    "pydantic>=2.10,<3",
+    "uvicorn>=0.34,<1",
     "pandas>=2.2,<3",
     "scikit-learn>=1.5,<2",
     "mlflow>=3,<4",
@@ -17,7 +20,7 @@ requires = ["uv_build==0.12.23"]
 build-backend = "uv_build"
 
 [dependency-groups]
-dev = ["pytest==9.1.1", "ruff==0.15.7"]
+dev = ["pytest==9.1.1", "ruff==0.15.7", "httpx>=0.28,<1"]
 
 [tool.uv]
 required-version = ">=0.12.19,<0.13"
