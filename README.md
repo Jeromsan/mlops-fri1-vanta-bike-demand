@@ -24,7 +24,7 @@ tests without network access, then run the Lab 2 baseline in a fresh container,
 also without network access:
 
 ```bash
-docker run --rm --network none bike-demand:lab3 uv run --locked pytest -q
+docker run --rm --network none --entrypoint uv bike-demand:lab3 run --locked pytest -q
 docker run --name bike-demand-lab3 --network none bike-demand:lab3
 docker logs bike-demand-lab3
 mkdir -p out
