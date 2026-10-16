@@ -73,8 +73,12 @@ def test_preflight_outside_project(tmp_path, monkeypatch, capsys):
     assert "Missing project file: uv.lock" in capsys.readouterr().out
 
 
-def test_training_commit_uses_build_revision_outside_git(tmp_path, monkeypatch):
+def test_training_commit_uses_build_revision_without_git(tmp_path, monkeypatch):
+    def missing_git(*args, **kwargs):
+        raise FileNotFoundError
+
     monkeypatch.setenv("SOURCE_COMMIT", "build-revision")
+    monkeypatch.setattr("bike_demand.tracking.subprocess.run", missing_git)
     assert training_commit(tmp_path) == "build-revision"
 
 

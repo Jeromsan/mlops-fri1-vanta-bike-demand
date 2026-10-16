@@ -14,4 +14,8 @@ dist
 .env.*
 artifacts
 tracking
-reports
+reports/images
+reports/*private*
+reports/metrics.json
+reports/metrics-history.jsonl
+reports/week-02-*

@@ -3,8 +3,8 @@
 - Team and repository: Vanta — [mlops-fri1-vanta-bike-demand](https://github.com/Jeromsan/mlops-fri1-vanta-bike-demand).
 - Members: Jeromsan JUDES RAMESH, Merwane KHELOUFI and Yvan FEUGANG.
 - Author of the fix: Jeromsan JUDES RAMESH.
-- PR reviewer before merge: Merwane KHELOUFI.
-- Evidence and screenshots: Jeromsan JUDES RAMESH.
+- PR reviewer before merge: Yvan Bonival FEUGANG
+- Evidence and screenshots: Merwane KHELOUFI.
 - Fourth member: not applicable; team of three.
 
 ## Workflow
