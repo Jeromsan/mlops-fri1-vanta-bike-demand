@@ -10,7 +10,12 @@ import pytest
 from sklearn.dummy import DummyRegressor
 
 from bike_demand import __version__, preflight
-from bike_demand.tracking import Tracking, record_metrics, write_json
+from bike_demand.tracking import (
+    Tracking,
+    record_metrics,
+    training_commit,
+    write_json,
+)
 from bike_demand.train import load_config
 
 pytestmark = pytest.mark.infra
@@ -66,6 +71,11 @@ def test_preflight_outside_project(tmp_path, monkeypatch, capsys):
     monkeypatch.chdir(tmp_path)
     assert preflight.main() == 1
     assert "Missing project file: uv.lock" in capsys.readouterr().out
+
+
+def test_training_commit_uses_build_revision_outside_git(tmp_path, monkeypatch):
+    monkeypatch.setenv("SOURCE_COMMIT", "build-revision")
+    assert training_commit(tmp_path) == "build-revision"
 
 
 def test_preflight_cli():
