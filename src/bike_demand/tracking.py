@@ -1,6 +1,7 @@
 """Provided local tracking plumbing. No running MLflow viewer is required."""
 
 import json
+import os
 import subprocess
 from datetime import UTC, datetime
 from pathlib import Path
@@ -14,22 +15,30 @@ def write_json(path: Path, value: dict) -> None:
 
 
 def training_commit(root: Path) -> str:
-    result = subprocess.run(
-        ["git", "-C", str(root), "rev-parse", "HEAD"],
-        capture_output=True,
-        text=True,
-        check=False,
-    )
-    return result.stdout.strip() if result.returncode == 0 else "unavailable"
+    try:
+        result = subprocess.run(
+            ["git", "-C", str(root), "rev-parse", "HEAD"],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+    except FileNotFoundError:
+        return os.environ.get("SOURCE_COMMIT") or "unavailable"
+    if result.returncode == 0:
+        return result.stdout.strip()
+    return os.environ.get("SOURCE_COMMIT") or "unavailable"
 
 
 def working_tree_dirty(root: Path) -> bool | None:
-    result = subprocess.run(
-        ["git", "-C", str(root), "status", "--porcelain"],
-        capture_output=True,
-        text=True,
-        check=False,
-    )
+    try:
+        result = subprocess.run(
+            ["git", "-C", str(root), "status", "--porcelain"],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+    except FileNotFoundError:
+        return None
     return bool(result.stdout.strip()) if result.returncode == 0 else None
 
 
