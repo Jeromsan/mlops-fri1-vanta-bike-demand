@@ -5,6 +5,54 @@ repository setup, Git workflow and quality checks. Lab 2 adds validated data,
 chronological splitting, a baseline comparison and local MLflow tracking.
 No Docker, cloud account or MLflow server is needed this week.
 
+## Week 2, Lab 3: locked container rerun
+
+The Lab 3 image installs dependencies only from the committed `uv.lock`; the
+Docker build and runtime do not regenerate it. Build from a clean checkout with
+Docker Desktop running:
+
+```bash
+docker build --no-cache --build-arg SOURCE_COMMIT="$(git rev-parse HEAD)" -t bike-demand:lab3 .
+```
+
+Run this from the clean, committed checkout being evaluated; the build requires
+the commit argument so the container can record its source revision without
+copying `.git` into the image.
+
+The image contains the frozen CSV, baseline config, source and tests. Run the
+tests without network access, then run the Lab 2 baseline in a fresh container,
+also without network access:
+
+```bash
+docker run --rm --network none bike-demand:lab3 uv run --locked pytest -q
+docker run --name bike-demand-lab3 --network none bike-demand:lab3
+docker logs bike-demand-lab3
+mkdir -p out
+docker cp bike-demand-lab3:/app/artifacts ./out/
+docker cp bike-demand-lab3:/app/reports ./out/
+docker cp bike-demand-lab3:/app/tracking ./out/
+docker rm bike-demand-lab3
+```
+
+Save the unedited build and run logs with the outputs. Record the exact source
+commit and `uv.lock` hash, Docker build log and image ID, the two validation
+MAEs and MLflow run IDs, and the model version. Compare those validation
+metrics with the Lab 2 record and explain any difference. Do not score the held
+test partition. A local run is not evidence of a remote CI run or a rerun by a
+non-author.
+
+To demonstrate that a missing lock fails without repairing it, use a disposable
+copy of a clean checkout, remove `uv.lock` in that copy, and run the same Docker
+build there. The build must stop at the missing-lock `COPY` step. Do not remove
+the lock from the working checkout or run `uv lock` to turn that failure green.
+Keep team evidence in [`reports/week-02-team.md`](reports/week-02-team.md).
+
+The base images are pinned to Python 3.12.11 and uv 0.12.23. The application
+dependencies and development tools are installed from the committed lock with
+`--locked`; source and frozen data are copied only after the dependency layer.
+`.dockerignore` excludes local environments, Git metadata, credentials and
+generated model/tracking/report outputs from the build context.
+
 ## Setup: Lab 1
 
 Install Git and [uv](https://docs.astral.sh/uv/getting-started/installation/)

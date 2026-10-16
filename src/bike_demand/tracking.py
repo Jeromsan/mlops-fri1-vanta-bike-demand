@@ -1,6 +1,7 @@
 """Provided local tracking plumbing. No running MLflow viewer is required."""
 
 import json
+import os
 import subprocess
 from datetime import UTC, datetime
 from pathlib import Path
@@ -20,7 +21,9 @@ def training_commit(root: Path) -> str:
         text=True,
         check=False,
     )
-    return result.stdout.strip() if result.returncode == 0 else "unavailable"
+    if result.returncode == 0:
+        return result.stdout.strip()
+    return os.environ.get("SOURCE_COMMIT") or "unavailable"
 
 
 def working_tree_dirty(root: Path) -> bool | None:
