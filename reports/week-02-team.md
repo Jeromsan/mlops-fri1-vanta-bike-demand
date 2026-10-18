@@ -11,8 +11,8 @@ The old container test log records 5 failed and 44 passed tests
 The earlier build output is saved in `week-02-docker-build.log`.
 No new Lab 3 training run was performed for this report. An updated Lab 3
 report from main at 87aa3da is preserved in `week-02-lab3.md`. It records
-49 passing tests and a separate model, baseline-9bc4824e1d60. Its test log
-was removed from main and the referenced run and missing-lock logs are absent.
+49 passing tests and a separate model, baseline-9bc4824e1d60. The earlier failed test log is retained here; the successful test log and
+the referenced run and missing-lock logs are not available in this checkout.
 Those results have not been independently verified here. Lab 4 uses the
 local model identified below, not that separate artifact.
 
