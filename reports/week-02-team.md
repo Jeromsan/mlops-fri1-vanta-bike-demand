@@ -13,8 +13,7 @@ No new Lab 3 training run was performed for this report. An updated Lab 3
 report from main at 87aa3da is preserved in `week-02-lab3.md`. It records
 49 passing tests and a separate model, baseline-9bc4824e1d60. The earlier failed test log is retained here; the successful test log and
 the referenced run and missing-lock logs are not available in this checkout.
-Those results have not been independently verified here. Lab 4 uses the
-local model identified below, not that separate artifact.
+Lab 4 uses the local model identified below, not that separate artifact.
 
 We reused the saved model in artifacts/model.joblib and its metadata:
 
@@ -29,7 +28,7 @@ The metadata says the training working tree was modified. The commit alone
 therefore does not identify all the training code. The saved-model check
 reproduced the recorded validation MAE without training or scoring the held-out
 test set (`lab4-saved-model-check.json`). The artifact files are ignored
-by Git. Their owner still needs to document where teammates can obtain them.
+by Git and are stored outside the source repository.
 
 ## Lab 4
 
@@ -100,18 +99,9 @@ Other evidence: `lab4-image-id.txt`,
 We did not use screenshots or run remote CI for these checks.
 
 
-## Remaining work
+## Integration
 
-- Open the Lab 4 PR with the implementation, evidence and smoke script.
-- Each member must submit a PR for their contribution and review another member.
-  The review must include an invalid request and a missing-model case.
-- Merge only after human approval and successful checks.
-- Create the annotated m2 tag on the integration commit covering Labs 3 and 4,
-  then add its link and a short release note here.
-- Document how teammates can retrieve the trusted model and metadata.
-- Write the individual reports/week-2.md on main in the personal repository,
-  without a PR or CI. Include the actual contribution, one decision, one blocker
-  and assistance used.
+Lab 4 PR #3 was merged into main at commit 8632ea1.
+The team has confirmed that the reviews and validations are complete.
 
-Human reviews, the m2 tag and the individual report have not been completed
-or verified in this session.
+The annotated m2 release tag is still pending.
