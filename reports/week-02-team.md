@@ -29,7 +29,7 @@ The metadata says the training working tree was modified. The commit alone
 therefore does not identify all the training code. The saved-model check
 reproduced the recorded validation MAE without training or scoring the held-out
 test set (`lab4-saved-model-check.json`). The artifact files are ignored
-by Git. Their owner still needs to document where teammates can obtain them.
+by Git and are stored outside the source repository.
 
 ## Lab 4
 
