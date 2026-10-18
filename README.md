@@ -5,6 +5,103 @@ repository setup, Git workflow and quality checks. Lab 2 adds validated data,
 chronological splitting, a baseline comparison and local MLflow tracking.
 No Docker, cloud account or MLflow server is needed this week.
 
+## Week 2, Lab 4: Prediction API
+
+The service loads a trusted, already evaluated `model.joblib` together with
+`model-metadata.json` once during startup. It never trains or repairs artifacts.
+Python 3.12 and the committed lock are required:
+
+```powershell
+uv sync --locked
+uv run --locked pytest -q
+uv run --locked python scripts/verify_saved_model.py
+uv run --locked uvicorn bike_demand.api:app --host 127.0.0.1 --port 8000
+```
+
+The verification script reads the existing artifact and evaluation record and
+recomputes only validation MAE; it does not fit a model or score the held test.
+The default artifact directory is `artifacts`; override it with `MODEL_DIR`.
+Obtain the matching, trusted model and metadata from the team's evaluated Lab 2/3
+outputs. They are deliberately not committed. A fresh clone needs those two
+files before it can serve predictions. Verify `model_sha256` against the model
+bytes; startup also checks feature order in the metadata and loaded estimator.
+The observed local artifact's identity and provenance limitations are recorded
+in [the Week 2 team report](reports/week-02-team.md).
+
+`GET /health` returns 200 only after loading and probing a usable model. Missing,
+corrupt or mismatched artifacts leave the service running with 503. Valid
+`POST /predict` requests also return 503 in that state. Both routes consult the
+same loaded-model state; an inference failure clears it until restart.
+
+`POST /predict` accepts exactly these fields in one flat JSON object:
+
+| Fields | Accepted JSON values |
+| --- | --- |
+| `season` | integer 1–4 |
+| `yr`, `holiday`, `workingday` | integer 0–1 |
+| `mnth` | integer 1–12 |
+| `hr` | integer 0–23 |
+| `weekday` | integer 0–6 |
+| `weathersit` | integer 1–4 |
+| `temp`, `atemp`, `hum`, `windspeed` | finite number 0–1 inclusive |
+
+Strings, booleans, nulls, missing fields and out-of-range values are rejected
+with 422 before request inference. Integer predictors reject fractional numbers
+and JSON floating-point values such as `1.0`. Weather accepts JSON integers or
+floats, already normalised; no scaling is applied. Every extra field is rejected,
+including `cnt`, `casual`, `registered`, `instant` and `dteday`. Predictors are
+ordered by the training `FEATURES` contract, regardless of JSON key order.
+
+Example in PowerShell (also saved as a request fixture):
+
+```powershell
+curl.exe -i -H "Content-Type: application/json" --data-binary "@tests/fixtures/predict-valid.json" http://127.0.0.1:8000/predict
+curl.exe -i -H "Content-Type: application/json" --data-binary "{}" http://127.0.0.1:8000/predict
+curl.exe -i http://127.0.0.1:8000/health
+```
+
+A successful response contains `prediction` (finite and nonnegative, rentals per
+hour) and `model_version` read from the metadata bound to the loaded model.
+Versions and predictions are never hard-coded. `/docs` exposes the schema.
+
+### Container build, tests and serving (PowerShell)
+
+Start Docker Desktop with Linux containers. Build from the committed revision:
+
+```powershell
+docker build --build-arg "SOURCE_COMMIT=$(git rev-parse HEAD)" -t bike-demand:lab4 .
+docker run --rm --network none --entrypoint uv bike-demand:lab4 run --locked --no-sync pytest -q
+docker image inspect bike-demand:lab4 --format '{{.Id}}'
+docker run -d --name bike-demand-lab4 -p 127.0.0.1:8000:8000 --mount "type=bind,source=$((Resolve-Path artifacts).Path),target=/app/artifacts,readonly" bike-demand:lab4
+```
+
+The image listens on `0.0.0.0:8000`; the published host port is limited to
+`127.0.0.1`. Artifacts stay outside the image and are mounted read-only. Use the
+curl commands above, save the request and response as text, then collect logs:
+
+```powershell
+docker logs bike-demand-lab4
+docker stop bike-demand-lab4
+docker rm bike-demand-lab4
+```
+
+For the no-model review, run the same image without the mount and repeat both
+routes: health and a valid prediction must return 503, an invalid request 422.
+The automated API tests use synthetic serving fixtures only, without training;
+the mounted real artifact is checked separately by the HTTP smoke test.
+Keep raw logs, tested source SHA, image ID and actual model version in
+`reports/lab4-*`; refer to them from the team report. Local and container runs
+are separate from remote CI. No more than three screenshots are needed.
+
+Each member must submit a PR for their actual contribution and review another
+member's work, including an invalid request and no-model case. Human review is
+not replaced by these tests. After approved PRs and successful checks are merged,
+create the annotated `m2` tag on the integration revision covering Labs 3 and 4.
+Record its link and a short release note in the team report. Do not tag before
+review. The individual `reports/week-2.md` belongs on `main` in the personal
+repository, without PR or CI, and must describe actual contribution, a decision,
+a blocker and assistance (including Codex).
+
 ## Week 2, Lab 3: locked container rerun
 
 The Lab 3 image installs dependencies only from the committed `uv.lock`; the
@@ -25,7 +122,7 @@ also without network access:
 
 ```bash
 docker run --rm --network none --entrypoint uv bike-demand:lab3 run --locked pytest -q
-docker run --name bike-demand-lab3 --network none bike-demand:lab3
+docker run --name bike-demand-lab3 --network none --entrypoint uv bike-demand:lab3 run --locked --no-sync python -m bike_demand.train --config configs/baseline.yaml
 docker logs bike-demand-lab3
 mkdir -p out
 docker cp bike-demand-lab3:/app/artifacts ./out/

@@ -1,0 +1,14 @@
+{
+  "season": 1,
+  "yr": 0,
+  "mnth": 1,
+  "hr": 12,
+  "holiday": 0,
+  "weekday": 2,
+  "workingday": 1,
+  "weathersit": 1,
+  "temp": 0.5,
+  "atemp": 0.5,
+  "hum": 0.5,
+  "windspeed": 0.0
+}

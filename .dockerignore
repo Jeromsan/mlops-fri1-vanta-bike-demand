@@ -19,3 +19,4 @@ reports/*private*
 reports/metrics.json
 reports/metrics-history.jsonl
 reports/week-02-*
+reports/lab4-*
