@@ -1,0 +1,3 @@
+{"claim": "health_status", "expected": 503, "observed": 503, "result": "ok"}
+{"claim": "prediction_status", "expected": 503, "observed": 503, "result": "ok"}
+{"claim": "invalid_status", "expected": 422, "observed": 422, "result": "ok"}

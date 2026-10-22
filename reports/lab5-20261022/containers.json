@@ -1,0 +1,33 @@
+[
+  {
+    "id": "e3035972aeb42ab0a86d69717f2fb866a4766fd9d54ebcf31b3f149f5668fdef",
+    "image": "sha256:02615bba3ec726d316b2e73863da6bf8e52dd03a6ea74c5ed29a9ae7f7d30f65",
+    "ports": {
+      "8000/tcp": [
+        {
+          "HostIp": "127.0.0.1",
+          "HostPort": "8000"
+        }
+      ]
+    },
+    "mounts": [
+      {
+        "destination": "/models",
+        "read_only": true
+      }
+    ]
+  },
+  {
+    "id": "6c1f71ee9753e8a53b3e02098e4a9aaabe59d32a73d2710ecd468b65d3f855ec",
+    "image": "sha256:02615bba3ec726d316b2e73863da6bf8e52dd03a6ea74c5ed29a9ae7f7d30f65",
+    "ports": {
+      "8000/tcp": [
+        {
+          "HostIp": "127.0.0.1",
+          "HostPort": "8001"
+        }
+      ]
+    },
+    "mounts": []
+  }
+]

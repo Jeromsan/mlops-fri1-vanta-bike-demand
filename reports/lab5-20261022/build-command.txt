@@ -1,0 +1,1 @@
+docker build --progress=plain --build-arg SOURCE_COMMIT=baee60a4dd24b4a30deb84320b6b4bc33c0e4def -t bike-demand:lab5 .

@@ -1,0 +1,3 @@
+2026/10/22 15:30:40 INFO mlflow.agent.hint: Load the `instrumenting-with-mlflow-tracing` skill at C:\Users\jerom\Documents\ECE\Inge-5\MlOps\mlops-fri1-vanta-bike-demand\.venv\Lib\site-packages\mlflow\assistant\skills\instrumenting-with-mlflow-tracing\SKILL.md before writing any tracing code; it ships with this MLflow install. Set MLFLOW_DISABLE_AGENT_HINT=1 to silence this.
+Preflight passed: imports, frozen snapshot and writable outputs.
+This does not complete exercises, verify GitHub CI, or certify other OSes.

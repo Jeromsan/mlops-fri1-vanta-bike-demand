@@ -1,0 +1,8 @@
+HTTP/1.1 503 Service Unavailable
+date: Thu, 22 Oct 2026 13:32:26 GMT
+server: uvicorn
+content-length: 30
+content-type: application/json
+x-request-id: cb4b6c3c735147b190e1cc830f44ca78
+
+{"detail":"Model unavailable"}

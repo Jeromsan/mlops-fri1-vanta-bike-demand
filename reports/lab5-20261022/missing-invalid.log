@@ -1,0 +1,8 @@
+HTTP/1.1 422 Unprocessable Entity
+date: Thu, 22 Oct 2026 13:32:26 GMT
+server: uvicorn
+content-length: 801
+content-type: application/json
+x-request-id: c8b25314d0864cb3965c3535ac2fee78
+
+{"detail":[{"loc":["body","season"],"msg":"Field required","type":"missing"},{"loc":["body","yr"],"msg":"Field required","type":"missing"},{"loc":["body","mnth"],"msg":"Field required","type":"missing"},{"loc":["body","hr"],"msg":"Field required","type":"missing"},{"loc":["body","holiday"],"msg":"Field required","type":"missing"},{"loc":["body","weekday"],"msg":"Field required","type":"missing"},{"loc":["body","workingday"],"msg":"Field required","type":"missing"},{"loc":["body","weathersit"],"msg":"Field required","type":"missing"},{"loc":["body","temp"],"msg":"Field required","type":"missing"},{"loc":["body","atemp"],"msg":"Field required","type":"missing"},{"loc":["body","hum"],"msg":"Field required","type":"missing"},{"loc":["body","windspeed"],"msg":"Field required","type":"missing"}]}
