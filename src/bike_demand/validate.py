@@ -37,6 +37,7 @@ COUNTS = ("cnt", "casual", "registered")
 
 def check_domains(frame: pd.DataFrame) -> None:
 <<<<<<< HEAD
+<<<<<<< HEAD
     for field, (minimum, maximum) in DOMAINS.items():
         values = frame[field].to_numpy(dtype=float)
         if (
@@ -69,6 +70,8 @@ def check_domains(frame: pd.DataFrame) -> None:
     ).any():
         raise ValueError("dteday: dates must be between 2011-01-01 and 2012-12-31")
 =======
+=======
+>>>>>>> main
     for field, (lower, upper) in DOMAINS.items():
         values = frame[field]
         if not (
@@ -88,7 +91,10 @@ def check_domains(frame: pd.DataFrame) -> None:
 
     if not frame["dteday"].between("2011-01-01", "2012-12-31").all():
         raise ValueError("dteday: require dates between 2011-01-01 and 2012-12-31")
+<<<<<<< HEAD
 >>>>>>> e7025fd (Complete Lab 2 validated and tracked baseline)
+=======
+>>>>>>> main
 
 
 def load_data(path: Path | str) -> pd.DataFrame:
