@@ -170,3 +170,74 @@ def test_lifespan_reloads_into_fresh_state(artifact_dir):
     (artifact_dir / "model.joblib").unlink()
     with TestClient(app) as client:
         assert client.get("/health").status_code == 503
+
+
+def test_health_identity_is_bound_to_loaded_bytes(artifact_dir, monkeypatch):
+    monkeypatch.setenv("SOURCE_COMMIT", "test-source")
+    digest = sha256(artifact_dir / "model.joblib")
+    with TestClient(create_app(artifact_dir)) as client:
+        (artifact_dir / "model.joblib").write_bytes(b"changed after startup")
+        assert client.get("/health").json() == {
+            "status": "ok",
+            "model_version": "synthetic-serving-fixture",
+            "model_sha256": digest,
+            "source_commit": "test-source",
+        }
+
+
+@pytest.mark.parametrize(
+    "case,expected",
+    [
+        ("ok", 200),
+        ("invalid", 422),
+        ("unavailable", 503),
+        ("unexpected", 500),
+        ("unknown", 404),
+    ],
+)
+def test_one_private_json_event_per_request(artifact_dir, case, expected):
+    import logging
+
+    from bike_demand.api import EVENTS
+
+    lines = []
+
+    class Collector(logging.Handler):
+        def emit(self, record):
+            lines.append(record.getMessage())
+
+    handler = Collector()
+    EVENTS.addHandler(handler)
+    try:
+        app = create_app(artifact_dir)
+
+        @app.get("/crash")
+        def crash():
+            raise RuntimeError("private-error-content")
+
+        with TestClient(app) as client:
+            if case == "unavailable":
+                app.state.loaded_model = None
+            lines.clear()
+            if case == "unexpected":
+                response = client.get("/crash")
+            elif case == "unknown":
+                response = client.get("/private-path?secret=private-query")
+            else:
+                response = client.post(
+                    "/predict?secret=private-query",
+                    json={} if case == "invalid" else VALID,
+                    headers={"Authorization": "Bearer private-token"},
+                )
+            assert response.status_code == expected
+            assert len(lines) == 1
+            record = json.loads(lines[0])
+            assert record["event"] == "request_completed"
+            assert record["status"] == expected
+            assert record["request_id"] == response.headers["X-Request-ID"]
+            assert record["duration_ms"] >= 0
+            assert record["timestamp"]
+            assert "private" not in lines[0]
+            assert "\n" not in lines[0]
+    finally:
+        EVENTS.removeHandler(handler)

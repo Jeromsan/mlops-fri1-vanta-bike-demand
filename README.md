@@ -275,3 +275,153 @@ personal data. Team evidence goes in `reports/lab-01.md` and
 Each weekly report is due Sunday 23:59 of the same week (published time zone).
 Assessment policy comes from the instructor, not this repository.
 See `BACKLOG.md` for later labs.
+
+## Deploy — Lab 5
+
+This procedure serves the evaluated Lab 4 model only. It never trains or repairs
+artifacts. Run the PowerShell commands from the repository root. Docker Desktop
+must use Linux containers; install Git, Python 3.12 and uv 0.12.x, then run
+`uv sync --locked`. Obtain the trusted `model.joblib` and matching
+`model-metadata.json` from the team's Lab 4 artifact custodian. A clone alone
+cannot serve predictions. Never load an unknown joblib file.
+
+The approved local Lab 4 record is version `baseline-df42e666d6d6`, SHA-256
+`fd98ceafc57a5babce61ce703cbf9cb8d1f83c6820b0b34fe30ad1a0fc49c304`.
+See `reports/lab4-saved-model-check.json` and `reports/week-02-team.md`.
+Its training tree was dirty: its training commit does not fully identify the
+training source. We preserve this limitation and reuse the artifact unchanged.
+
+### Prepare independent expectations and build
+
+Use a committed checkout. Review `git status --short`: source, Dockerfile,
+README, lock and tests must have no pending changes. An untracked teaching PDF
+under `lab/` is excluded from the Docker context. Do not claim a dirty build
+matches HEAD. Save new evidence under a new run directory rather than overwriting
+an earlier run. Expected values come from the approved artifact record and Git,
+never from `/health`.
+
+```powershell
+$SourceCommit = (git rev-parse HEAD).Trim()
+$ExpectedVersion = 'baseline-df42e666d6d6'
+$ExpectedHash = 'fd98ceafc57a5babce61ce703cbf9cb8d1f83c6820b0b34fe30ad1a0fc49c304'
+$ArtifactPath = (Resolve-Path artifacts).Path
+$Metadata = Get-Content "$ArtifactPath/model-metadata.json" -Raw | ConvertFrom-Json
+$ActualHash = (Get-FileHash "$ArtifactPath/model.joblib" -Algorithm SHA256).Hash.ToLowerInvariant()
+if ($ActualHash -ne $ExpectedHash -or $Metadata.model_sha256 -ne $ExpectedHash -or $Metadata.model_version -ne $ExpectedVersion) { throw 'Unapproved artifact identity' }
+$Evidence = "reports/lab5-$((Get-Date).ToString('yyyyMMdd-HHmmss'))"
+New-Item -ItemType Directory -Path $Evidence | Out-Null
+git rev-parse HEAD | Set-Content "$Evidence/source-commit.txt"
+git status --short | Set-Content "$Evidence/git-status.txt"
+@{ model_version=$ExpectedVersion; model_sha256=$ExpectedHash; source_commit=$SourceCommit } | ConvertTo-Json | Set-Content "$Evidence/expected.json"
+"docker build --build-arg SOURCE_COMMIT=$SourceCommit -t bike-demand:lab5 ." | Set-Content "$Evidence/build-command.txt"
+docker build --build-arg "SOURCE_COMMIT=$SourceCommit" -t bike-demand:lab5 . 2>&1 | Tee-Object "$Evidence/build.log"
+$BuildExit = $LASTEXITCODE
+$BuildExit | Set-Content "$Evidence/build-exit.txt"
+if ($BuildExit -ne 0) { throw 'Build failed' }
+$ImageId = (docker image inspect bike-demand:lab5 --format '{{.Id}}').Trim()
+$ImageId | Set-Content "$Evidence/image-id.txt"
+```
+
+Dependencies are installed with `uv sync --locked`. No dependency was added for
+Lab 5. The image contains source, tests and the public frozen input CSV needed
+by infrastructure checks, but no team artifact, tracking store, metrics output
+or team report content. The empty Week 1 report path only satisfies preflight's
+file-presence check. Docker's build argument records a claim: clean source and
+the saved build command are necessary to substantiate it.
+
+### Start, check and inspect
+
+Choose free host ports. Keep the container port 8000. `MODEL_DIR` points to the
+read-only mount; this example deliberately uses a non-default location.
+
+```powershell
+$HostPort = 8000
+$BaseUrl = "http://127.0.0.1:$HostPort"
+"docker run -d --name bike-demand-lab5 -p 127.0.0.1:${HostPort}:8000 -e MODEL_DIR=/models --mount type=bind,source=<approved-artifact-directory>,target=/models,readonly $ImageId" | Set-Content "$Evidence/run-command.txt"
+docker run -d --name bike-demand-lab5 -p "127.0.0.1:${HostPort}:8000" -e MODEL_DIR=/models --mount "type=bind,source=$ArtifactPath,target=/models,readonly" $ImageId | Set-Content "$Evidence/container-id.txt"
+if ($LASTEXITCODE -ne 0) { throw 'Container start failed' }
+uv run --locked python scripts/smoke_api.py $BaseUrl --expected-version $ExpectedVersion --expected-sha256 $ExpectedHash --expected-commit $SourceCommit 2>&1 | Tee-Object "$Evidence/check.jsonl"
+$CheckExit = $LASTEXITCODE
+$CheckExit | Set-Content "$Evidence/check-exit.txt"
+if ($CheckExit -ne 0) { throw 'Deployment verification failed; inspect evidence and logs' }
+curl.exe -sS -i "$BaseUrl/health" | Tee-Object "$Evidence/health.http"
+curl.exe -sS -i -H 'Content-Type: application/json' --data-binary '@tests/fixtures/predict-valid.json' "$BaseUrl/predict" | Tee-Object "$Evidence/valid.http"
+curl.exe -sS -i -H 'Content-Type: application/json' --data-binary '{}' "$BaseUrl/predict" | Tee-Object "$Evidence/invalid.http"
+docker logs bike-demand-lab5 2>&1 | Tee-Object "$Evidence/container.log"
+```
+
+The checker uses only HTTP to contact the service. It waits at most 30 seconds
+for readiness (each request has a timeout of at most 5 seconds), checks all three
+identities, predicts, then sends `hr=24` and requires 422. Every claim prints
+expected, observed and result. Exit 0 means all checks pass; other exits mean
+failure. The startup wait plus the two prediction calls is bounded, apart from
+operating-system DNS resolution. This localhost procedure avoids DNS.
+`--expect-unavailable` checks 503/503/422 only; it does not certify identity.
+
+### Observe deliberate failures and clean up
+
+Keep the same image and correct expectations; first change only the expected
+code revision. The checker must return 1 even though the service returns 200.
+Then run without a model: health and valid prediction must be 503, invalid
+prediction 422. Startup should emit `model_unavailable` without a traceback or
+local path. These checks do not change the approved artifact.
+
+```powershell
+uv run --locked python scripts/smoke_api.py $BaseUrl --expected-version $ExpectedVersion --expected-sha256 $ExpectedHash --expected-commit deliberately-wrong 2>&1 | Tee-Object "$Evidence/wrong-commit.jsonl"
+$WrongExit = $LASTEXITCODE
+$WrongExit | Set-Content "$Evidence/wrong-commit-exit.txt"
+if ($WrongExit -ne 1) { throw 'Wrong revision did not fail as expected' }
+docker run -d --name bike-demand-lab5-missing -p 127.0.0.1:8001:8000 -e MODEL_DIR=/models $ImageId | Set-Content "$Evidence/missing-container-id.txt"
+uv run --locked python scripts/smoke_api.py http://127.0.0.1:8001 --expected-version $ExpectedVersion --expected-sha256 $ExpectedHash --expected-commit $SourceCommit --expect-unavailable 2>&1 | Tee-Object "$Evidence/missing-check.jsonl"
+$LASTEXITCODE | Set-Content "$Evidence/missing-check-exit.txt"
+curl.exe -sS -i http://127.0.0.1:8001/health | Tee-Object "$Evidence/missing-health.http"
+curl.exe -sS -i -H 'Content-Type: application/json' --data-binary '@tests/fixtures/predict-valid.json' http://127.0.0.1:8001/predict | Tee-Object "$Evidence/missing-valid.http"
+docker logs bike-demand-lab5 2>&1 | Set-Content "$Evidence/container.log"
+docker logs bike-demand-lab5-missing 2>&1 | Set-Content "$Evidence/missing-container.log"
+docker inspect --format '{{.Id}} {{.Image}} {{json .HostConfig.PortBindings}} {{json .Mounts}}' bike-demand-lab5 bike-demand-lab5-missing | Set-Content "$Evidence/containers.txt"
+docker stop bike-demand-lab5 bike-demand-lab5-missing
+docker rm bike-demand-lab5 bike-demand-lab5-missing
+```
+
+### Ten deployment decisions
+
+| Question | Choice | Rejected alternative and reason |
+| --- | --- | --- |
+| settings | `MODEL_DIR` and read-only mount at launch; host port chosen at launch; source commit at build | Editing Python for each machine would make the same image behave as different source |
+| model | Trusted evaluated Lab 4 pair, verified before and during loading | Retraining at startup changes the approved model and violates the lab |
+| ready | Model checksum, feature order and finite nonnegative probe pass; inference failure clears readiness | A live HTTP process alone cannot promise predictions |
+| broken | Keep HTTP running; health and valid prediction return 503; invalid input stays 422 | Exiting immediately prevents external inspection of the unavailable state |
+| log line | One `request_completed` JSON line: UTC time, generated request ID, method, route template, status, duration, model identity and source commit | Raw request dumps leak content and are difficult to correlate |
+| secrets | No body, auth header, query, client address, arbitrary unmatched path or exception text; only safe error class for lifecycle events | Tracebacks and full URLs can expose private values |
+| identity | Metadata version plus SHA-256 of the exact bytes deserialized, with image source commit | Version labels alone can refer to different bytes |
+| expected | Final checker obtains approved identity before launch from the Lab 4 record and source Git commit | Copying expected values from the API makes the comparison circular |
+| promise | At check time this image answers locally with the expected code/model, accepts valid input and rejects invalid input | A running container is insufficient; this check promises neither accuracy, availability over time nor production readiness |
+| failure | Wrong expected commit fails; absent mount produces 503 and a safe startup event | A simulated failure provides no evidence about the running image |
+
+Application events are JSON with an `event` field. Uvicorn access logs are
+disabled; its lifecycle messages are separate non-JSON server messages.
+`model_unavailable` and `model_inference_failed` are lifecycle/error events,
+not additional request-completion events. Unknown paths are logged as
+`<unmatched>` to avoid exposing private path content. Request IDs are generated
+by the service rather than trusting client-supplied identifiers.
+
+### Human review and handover
+
+Each actual member needs their own substantive contribution and PR into `main`,
+and must review another member's PR. Do not split already completed work into
+fictional ownership. The reviewer follows only this section, changes `$HostPort`
+to a free port (for example 8010), and checks that the HTTP URL and saved port
+mapping reflect it. They also verify the non-default `/models` configuration,
+the read-only mount, successful identity check and deliberate failures.
+Record one actionable finding, the author's response and the actual rerun.
+
+Final check owner: **to be designated by the team before acceptance**.
+Record their name, checked commit, image and evidence directory in the team
+report. Local tests and Docker HTTP evidence are separate from remote CI.
+The current workflow does not certify this Docker deployment. Lab 6 extends CI;
+create annotated `m3` only after both Labs 5 and 6 are reviewed and merged.
+The individual `reports/week-3.md` belongs on personal `main`, with no PR or CI;
+it records actual work, decision, blocker and assistance, including AI help.
+
+Execution status and exact results belong in `reports/week-03-team.md` and its
+linked raw logs. Commands above are a procedure, not proof of an execution.
