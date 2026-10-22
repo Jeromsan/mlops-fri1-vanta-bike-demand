@@ -1,150 +1,167 @@
-﻿# Semaine 3 — Labs 5 et 6
+﻿# Week 3 — Lab 5
 
-## Lab 5 — Déployer et vérifier le service
+## Deploying and Verifying the Service
 
-Le service du Lab 4 fonctionne maintenant dans une image qui permet de vérifier
-le modèle et le code utilisés. `/health` conserve ses champs et ajoute
-`model_sha256` et `source_commit`. Le SHA-256 est calculé sur les mêmes octets que
-ceux transmis à joblib. Le service ne réentraîne pas le modèle.
+I updated the Lab 4 service so that the running container reports which model and source code it uses. I kept the existing `/health` fields and added `model_sha256` and `source_commit`. The hash is calculated from the same model bytes passed to joblib. I did not retrain or replace the model.
 
-Chaque requête produit un événement `request_completed` sur une seule ligne
-JSON. Il contient l'heure UTC, un identifiant généré, la méthode, la route, le
-statut, la durée et les identités disponibles. Les corps, paramètres d'URL,
-en-têtes d'authentification et adresses clients ne sont pas journalisés. Les
-routes inconnues sont remplacées par `<unmatched>`. Les événements de démarrage
-sont distincts et les logs d'accès Uvicorn sont désactivés dans l'image.
+I added a `request_completed` event for every HTTP request. Each event is written as a single JSON line containing the UTC timestamp, a generated request ID, the method, route, status, duration, and available deployment identities.
 
-Le contrôle externe utilise HTTP depuis l'hôte. Ses attentes sont fournies en
-arguments, à partir du dossier évalué du Lab 4 et du commit de construction.
-Il vérifie la santé, les trois identités, une prédiction et le rejet `hr=24`.
-Une seule différence suffit à produire un code de sortie 1.
+Request bodies, URL parameters, authentication headers, and client addresses are excluded from the logs. Unknown routes appear as `<unmatched>`. Startup events are recorded separately, and Uvicorn access logs are disabled in the image.
 
-### Source, image et exécutions
+I also implemented an external checker that sends HTTP requests from the host. It receives the expected model version, model hash, and source commit as arguments. These values come from the existing Lab 4 artifact record and the commit used to build the image.
 
-Vérifications locales réalisées le 22 octobre 2026, sur Windows avec Docker
-Desktop et un moteur Linux. La branche est `lab5/service-deployment`, créée
-sur `main` à partir de `edcc0f717b842b9c5708e3622ce4f88580193a2a`.
+The checker verifies readiness, deployment identity, a valid prediction, and the rejection of `hr=24`. Any mismatch produces exit code 1.
 
-- Commit construit : `baee60a4dd24b4a30deb84320b6b4bc33c0e4def`.
-- Image : `sha256:02615bba3ec726d316b2e73863da6bf8e52dd03a6ea74c5ed29a9ae7f7d30f65`.
-- Modèle attendu et observé : `baseline-df42e666d6d6`.
-- Empreinte attendue et observée : `fd98ceafc57a5babce61ce703cbf9cb8d1f83c6820b0b34fe30ad1a0fc49c304`.
-- Révision attendue et observée : le commit construit ci-dessus.
+## Source and Runtime Configuration
 
-Au début de la construction, aucun fichier suivi n'était modifié. Le dossier
-pédagogique `lab/` et le dossier de preuves étaient non suivis et exclus du
-contexte Docker. Les preuves et ce rapport sont des ajouts ultérieurs : ils ne
-font pas partie du commit embarqué. Aucune publication ni fusion n'a été faite.
+I ran the checks on October 22, 2026, on Windows with Docker Desktop using Linux containers.
 
-Le service chargé utilisait `MODEL_DIR=/models`, avec un montage en lecture
-seule et le port hôte `127.0.0.1:8000`. Le service sans modèle utilisait la même
-image sur `127.0.0.1:8001`, sans montage. Les identifiants de conteneurs et ces
-paramètres sont dans [containers.json](lab5-20261022/containers.json).
+The branch was `lab5/service-deployment`, created from `main` at commit `edcc0f717b842b9c5708e3622ce4f88580193a2a`.
 
-### Résultats observés
-
-| Contrôle | Résultat |
+| Item | Value |
 | --- | --- |
-| Construction Docker | Code 0 |
-| Ruff et formatage | Réussis |
-| Preflight local | Code 0 |
-| Suite complète locale | 205 réussites, 2 avertissements, code 0 |
-| Suite complète dans l'image, réseau externe coupé | 205 réussites, 2 avertissements, code 0 |
-| Santé et trois identités du service chargé | Concordantes, HTTP 200 |
-| Prédiction valide | HTTP 200, `149.2911970908957` et version attendue |
-| Entrée invalide | HTTP 422 |
-| Contrôle du déploiement correct | Code 0 |
-| Mauvaise révision attendue | Code 1, différence affichée pour `source_commit` |
-| Sans modèle : santé / prédiction valide / entrée invalide | 503 / 503 / 422 |
-| Contrôle normal face au service sans modèle | Code 1 |
-| Contrôle spécial de la panne attendue | Code 0 ; cela ne certifie pas un déploiement prêt |
-| Inspection ciblée de l'image | Modèle, tracking, métriques et chemins privés vérifiés absents |
+| Source commit used for the build | `baee60a4dd24b4a30deb84320b6b4bc33c0e4def` |
+| Docker image ID | `sha256:02615bba3ec726d316b2e73863da6bf8e52dd03a6ea74c5ed29a9ae7f7d30f65` |
+| Expected and observed model version | `baseline-df42e666d6d6` |
+| Expected and observed model SHA-256 | `fd98ceafc57a5babce61ce703cbf9cb8d1f83c6820b0b34fe30ad1a0fc49c304` |
+| Expected and observed source revision | `baee60a4dd24b4a30deb84320b6b4bc33c0e4def` |
 
-La mauvaise révision attendue ne provoque pas une panne du service : les
-requêtes restent valides mais le contrôle refuse son identité. Sans montage,
-le fichier nécessaire au chargement manque. Le journal contient alors
-`model_unavailable`, avec `FileNotFoundError` et une action de diagnostic, puis
-les événements de requêtes en 503 ou 422. Aucun chemin local ni traceback
-n'apparaît dans ce journal applicatif.
+No tracked files were modified when I started the build. The `lab/` directory and evidence directory were untracked and excluded from the Docker build context. I added the evidence and this report after the build, so they are not part of the embedded source commit.
 
-L'audit des lignes JSON compte 9 fins de requêtes pour le service chargé
-(6 réponses 200, 3 réponses 422), et 13 pour le service sans modèle
-(10 réponses 503, 3 réponses 422). Les 13 incluent les interrogations répétées
-pendant l'attente bornée du contrôle normal. Le second journal comprend aussi
-un événement de démarrage distinct. Chaque réponse curl sauvegardée correspond
-à un seul identifiant dans les logs. L'empreinte du modèle après les essais
-reste identique.
+For the working deployment, I used `MODEL_DIR=/models`, a read-only model mount, and host address `127.0.0.1:8000`.
 
-### Preuves brutes
+For the missing-model scenario, I started the same image on `127.0.0.1:8001` without the model mount.
 
-Toutes les preuves de cette exécution sont dans [lab5-20261022](lab5-20261022/).
+The container IDs and runtime settings are recorded in [containers.json](lab5-20261022/containers.json).
 
-- Origine : [commit](lab5-20261022/source-commit.txt), [état Git](lab5-20261022/git-status.txt), [attentes indépendantes](lab5-20261022/expected.json).
-- Construction : [commande](lab5-20261022/build-command.txt), [sortie brute](lab5-20261022/build.log), [code de sortie](lab5-20261022/build-exit.txt), [image](lab5-20261022/image-id.txt).
-- Exécution : [commandes et codes attendus](lab5-20261022/commands.json), [santé](lab5-20261022/health.log), [prédiction](lab5-20261022/valid.log), [entrée invalide](lab5-20261022/invalid.log).
-- Contrôles : [cas correct](lab5-20261022/check.log), [mauvaise révision](lab5-20261022/wrong-commit.log), [panne attendue](lab5-20261022/missing-check.log), [contrôle normal en panne](lab5-20261022/missing-normal-check.log). Chaque sortie a son fichier `*-exit.txt`.
-- Sans modèle : [santé](lab5-20261022/missing-health.log), [prédiction](lab5-20261022/missing-valid.log), [entrée invalide](lab5-20261022/missing-invalid.log).
-- Journaux : [service chargé](lab5-20261022/container.log), [service sans modèle](lab5-20261022/missing-container.log), [audit JSON et empreinte finale](lab5-20261022/log-audit.json).
-- Qualité : [Ruff](lab5-20261022/ruff-check.log), [formatage](lab5-20261022/ruff-format.log), [preflight](lab5-20261022/preflight.log), [tests locaux](lab5-20261022/local-tests.log), [tests dans l'image](lab5-20261022/container-tests.log).
-- Contenu : [audit ciblé de l'image](lab5-20261022/image-audit.log).
-- Fin des essais : [arrêt et suppression des conteneurs](lab5-20261022/cleanup.log).
+## Checks I Performed
 
-Les commandes Docker, curl et uv ont été exécutées depuis PowerShell ; un
-petit programme Python a conservé stdout/stderr et les codes de sortie sans
-les conversions de stderr de Windows PowerShell. Les arguments réellement
-exécutés sont conservés. Le README donne la procédure PowerShell équivalente ;
-elle n'a pas encore été suivie de bout en bout par un autre membre.
-Aucune capture d'écran n'a été utilisée.
+| Check | Observed result |
+| --- | --- |
+| Docker build | Exit code 0 |
+| Ruff and formatting | Passed |
+| Local preflight | Exit code 0 |
+| Full local test suite | 205 passed, 2 warnings, exit code 0 |
+| Full test suite inside the image without external network access | 205 passed, 2 warnings, exit code 0 |
+| Health and deployment identities | HTTP 200 with matching values |
+| Valid prediction | HTTP 200 with prediction `149.2911970908957` and the expected model version |
+| Invalid input | HTTP 422 |
+| Correct deployment check | Exit code 0 |
+| Incorrect expected source revision | Exit code 1 with a reported `source_commit` mismatch |
+| Missing model, health request | HTTP 503 |
+| Missing model, valid prediction request | HTTP 503 |
+| Missing model, invalid input | HTTP 422 |
+| Normal deployment check against the missing-model service | Exit code 1 |
+| Dedicated missing-model scenario check | Exit code 0, confirming the expected failure behavior |
+| Targeted image inspection | Model artifacts, tracking outputs, metrics, and the checked private paths were absent |
 
-### Décisions et limites
+### Incorrect Expected Revision
 
-Les dix choix et leurs alternatives sont dans la section « Deploy — Lab 5 » du
-README. Nous gardons le modèle hors de l'image pour pouvoir monter la paire
-approuvée sans reconstruire le code. Nous vérifions version et empreinte plutôt
-qu'un simple nom. Le port est limité à localhost. Un 503 observable permet de
-diagnostiquer un modèle absent, plutôt que de confondre processus vivant et
-service prêt. Aucune dépendance supplémentaire ni modification du verrou
-n'était nécessaire.
+I supplied an incorrect expected source commit to the checker. The service continued to answer requests, but the checker reported the identity mismatch and exited with code 1.
 
-Le modèle vient du Lab 4. Ses métadonnées indiquent un entraînement sur un arbre
-modifié : son commit d'entraînement ne décrit donc pas tout le code utilisé.
-Cette limite est conservée ; le modèle n'a pas été régénéré. Les tests de
-régression entraînent seulement des fixtures isolées et ne remplacent pas
-l'artefact d'équipe. Aucune métrique de la période de test n'a été calculée.
+This confirmed that a successful HTTP response alone does not make the deployment check pass.
 
-La première tentative des tests API a été bloquée par les droits du dossier
-temporaire Windows dans le bac à sable. La relance autorisée hors du bac à sable
-a réussi. La capture de la suite locale contient aussi un message de connexion
-interrompue du petit serveur HTTP de test, sous délai de 0,1 seconde ; pytest a
-terminé avec 205 réussites. La suite dans l'image n'a pas ce message. Les deux
-avertissements concernent TestClient et SQLAlchemy ; les assertions n'ont pas
-été désactivées.
+### Missing Model
 
-Ces essais sont locaux. Aucune exécution distante de GitHub Actions sur ce
-commit n'a été observée. L'inspection de l'image est ciblée sur les chemins
-annoncés ; elle ne constitue pas un audit de sécurité exhaustif. Le contrôle
-valide un état à un instant donné, pas la disponibilité future ni la qualité
-prédictive. Le propriétaire du contrôle final reste à désigner.
+I started the image without the model mount. The service logged a `model_unavailable` event with `FileNotFoundError` and diagnostic guidance.
 
-### Contributions et revues
+Health requests and valid prediction requests returned HTTP 503. Invalid inputs still returned HTTP 422.
 
-Cette implémentation et ces vérifications ont été préparées dans la session de
-travail de Jeromsan avec l'aide de Codex. Aucune contribution de Merwane ou
-Yvan, aucune PR et aucune revue humaine ne sont attestées par cette exécution.
-Leur participation au Lab 5 est annoncée, mais leurs contributions propres et
-leurs revues restent à réaliser et à documenter. La proposition de répartition
-précédente n'est pas un relevé de travail accompli.
+The application log did not include a local path or traceback. The dedicated failure check passed because it observed the expected unavailable state. This result does not mean the service was ready to serve predictions.
 
-Avant acceptation : chaque membre réalise une contribution substantielle dans
-sa PR et relit une autre PR. Un autre membre suit uniquement le README,
-modifie le port ou le chemin du modèle, relève un point concret et vérifie les
-preuves. La personne chargée du contrôle final doit être nommée. La préparation
-de PR est dans [lab5-pr.md](lab5-pr.md).
+## Request Log Checks
 
-## Lab 6
+I checked that the application events were valid JSON and that each saved curl response matched exactly one request event through its request ID.
 
-Non réalisé dans cette session. Le workflow existant n'a pas été étendu.
-Les preuves CI, les échecs et réparations de workflow restent à produire.
-Le tag `m3` ne doit être créé qu'après revue et intégration des Labs 5 et 6.
-Le rapport individuel de semaine 3 reste à préparer dans le dépôt personnel
-à partir des contributions et revues réellement effectuées.
+The working service recorded 9 completed requests:
+
+- 6 responses with HTTP 200
+- 3 responses with HTTP 422
+
+The service without a model recorded 13 completed requests:
+
+- 10 responses with HTTP 503
+- 3 responses with HTTP 422
+
+The missing-model count includes repeated requests made during the normal checker's bounded startup wait. Its log also contains a separate startup event.
+
+I checked the model hash again after the tests. It had not changed.
+
+## Evidence
+
+I saved the raw execution records in [lab5-20261022](lab5-20261022/).
+
+### Source and Expected Values
+
+- [Source commit](lab5-20261022/source-commit.txt)
+- [Git status](lab5-20261022/git-status.txt)
+- [Independent expected values](lab5-20261022/expected.json)
+
+### Docker Build
+
+- [Build command](lab5-20261022/build-command.txt)
+- [Build output](lab5-20261022/build.log)
+- [Build exit code](lab5-20261022/build-exit.txt)
+- [Image ID](lab5-20261022/image-id.txt)
+
+### HTTP Requests and Deployment Checks
+
+- [Executed commands and expected exit codes](lab5-20261022/commands.json)
+- [Health response](lab5-20261022/health.log)
+- [Valid prediction](lab5-20261022/valid.log)
+- [Invalid input](lab5-20261022/invalid.log)
+- [Successful deployment check](lab5-20261022/check.log)
+- [Incorrect expected revision](lab5-20261022/wrong-commit.log)
+- [Dedicated missing-model check](lab5-20261022/missing-check.log)
+- [Normal check against the unavailable service](lab5-20261022/missing-normal-check.log)
+
+Each checker output has a corresponding `*-exit.txt` file.
+
+### Missing-Model Responses
+
+- [Health response](lab5-20261022/missing-health.log)
+- [Valid prediction request](lab5-20261022/missing-valid.log)
+- [Invalid input](lab5-20261022/missing-invalid.log)
+
+### Logs and Code Checks
+
+- [Working service logs](lab5-20261022/container.log)
+- [Missing-model service logs](lab5-20261022/missing-container.log)
+- [JSON log checks and final model hash](lab5-20261022/log-audit.json)
+- [Ruff](lab5-20261022/ruff-check.log)
+- [Formatting](lab5-20261022/ruff-format.log)
+- [Preflight](lab5-20261022/preflight.log)
+- [Local tests](lab5-20261022/local-tests.log)
+- [Tests inside the image](lab5-20261022/container-tests.log)
+- [Targeted image inspection](lab5-20261022/image-audit.log)
+- [Container cleanup](lab5-20261022/cleanup.log)
+
+I ran the Docker, curl, and uv commands from PowerShell. A small Python runner saved their standard output, error output, and exit codes. The executed arguments are included in the evidence files.
+
+I did not use screenshots.
+
+## Decisions
+
+I kept the model outside the image so that the approved model and metadata can be mounted without rebuilding the application.
+
+I checked both the model version and its SHA-256 hash. A version name alone would not identify the actual file loaded by the service.
+
+I limited the published ports to localhost and mounted the model directory read-only.
+
+I kept the HTTP service available when the model could not load. Returning HTTP 503 makes the problem observable and distinguishes a running process from a service that is ready to make predictions.
+
+I documented the ten required deployment decisions and their alternatives in the README's “Deploy — Lab 5” section.
+
+No additional dependency or lock file change was needed.
+
+## Observations and Limitations
+
+I reused the Lab 4 model. Its metadata records training from a modified working tree, so the training commit does not fully identify the code used to produce it. I kept this provenance limitation documented and did not regenerate the model.
+
+The regression tests train isolated test fixtures. They do not replace the team model. I did not calculate metrics on the held-out test period.
+
+The first API test attempt was blocked by permissions on the Windows temporary directory. After resolving the execution permissions, I reran the suite successfully.
+
+The local test output includes a connection interruption from a test HTTP server using a 0.1-second timeout. The suite still finished with 205 passing tests. This message did not appear in the container test run.
+
+The two deprecation warnings concern TestClient and SQLAlchemy. I did not disable assertions to make the tests pass.

@@ -1,52 +1,52 @@
-﻿# PR proposée
+﻿# Lab 5 — Verify the Deployed Model and Log Requests
 
-Titre : Lab 5 — vérifier le modèle déployé et journaliser les requêtes
+## Changes
 
-## Problème et changements
+I implemented the Lab 5 changes to verify deployment identity and add structured request logging.
 
-Le service du Lab 4 ne permettait pas de contrôler complètement l'identité du
-déploiement et ne produisait pas de logs structurés par requête. `/health`
-expose maintenant la version, l'empreinte des octets chargés et le commit source,
-en conservant les champs et comportements existants. Les événements JSON
-résument les requêtes sans leur contenu. Le contrôle HTTP externe compare des
-attentes indépendantes et échoue sur toute différence.
+I extended `/health` to expose the model version, the SHA-256 hash of the loaded model bytes, and the source commit, while preserving existing fields and behavior. I added JSON request events without logging request contents, together with an external HTTP checker that compares independently supplied expected values and fails on any mismatch.
 
-Le Dockerfile conserve le verrou, accepte le modèle en lecture seule et coupe
-les logs d'accès Uvicorn. Les rapports d'équipe ne sont plus copiés dans l'image.
-Le README décrit le lancement PowerShell, les dix décisions, les échecs
-volontaires et le nettoyage. Aucun modèle n'a été réentraîné ni remplacé.
+I updated the Docker configuration to preserve locked dependencies, use a read-only model mount, and disable Uvicorn access logs. Team reports are no longer copied into the image.
 
-## Vérifications réalisées
+I also documented PowerShell deployment commands, the ten required decisions, deliberate failure scenarios, and cleanup in the README. No model was retrained or replaced.
 
-- Ruff, formatage et preflight réussis.
-- 205 tests réussis en local et 205 dans l'image sans réseau externe ; deux avertissements de dépréciation dans chaque suite.
-- Vrai conteneur : identités concordantes, prédiction 200, entrée invalide 422, contrôle code 0.
-- Mauvais commit attendu : contrôle code 1 alors que le service répond 200.
-- Même image sans modèle : 503/503/422 ; contrôle normal code 1.
-- Lignes applicatives JSON valides et identifiants des réponses sauvegardées présents une seule fois.
-- Montage `/models` en lecture seule, ports publiés sur 127.0.0.1 seulement.
+## Verification
 
-Code construit : `baee60a4dd24b4a30deb84320b6b4bc33c0e4def`.
-Image : `sha256:02615bba3ec726d316b2e73863da6bf8e52dd03a6ea74c5ed29a9ae7f7d30f65`.
-Les fichiers de preuves et le rapport sont ajoutés après ce commit.
+I verified all the following points:
 
-Rapport : [week-03-team.md](week-03-team.md).
-Preuves : [lab5-20261022](lab5-20261022/), notamment
-[contrôle réussi](lab5-20261022/check.log),
-[mauvaise révision](lab5-20261022/wrong-commit.log),
-[logs sans modèle](lab5-20261022/missing-container.log) et
-[tests dans l'image](lab5-20261022/container-tests.log).
+- Ruff, formatting checks, and preflight passed.
+- All 205 tests passed locally and all 205 passed inside the image without external network access. Each suite reported two deprecation warnings.
+- Against the running container: deployment identities matched, valid prediction returned HTTP 200, invalid input returned HTTP 422, and the external checker exited with code 0.
+- With an incorrect expected commit: the checker exited with code 1 even though the service returned HTTP 200.
+- With the same image and no model: responses were 503/503/422, and the normal deployment checker exited with code 1.
+- Application log lines were valid JSON, and each saved response's request identifier appeared exactly once in the request events.
+- `/models` was mounted read-only, and ports were published only on `127.0.0.1`.
 
-## Limites et revue demandée
+Source commit used for the build:
+`baee60a4dd24b4a30deb84320b6b4bc33c0e4def`
 
-Aucune CI distante observée, aucune approbation humaine déclarée. Le modèle
-hérité a été entraîné sur un arbre modifié ; cette provenance est documentée.
-Le Lab 6, les contributions propres des autres membres et le contrôle final
-par une personne désignée restent à faire. Aucun tag m3 n'a été créé.
+Image ID:
+`sha256:02615bba3ec726d316b2e73863da6bf8e52dd03a6ea74c5ed29a9ae7f7d30f65`
 
-Pour la revue, suivre uniquement « Deploy — Lab 5 » du README sur cette branche.
-Changer le port hôte, par exemple 8000 vers 8010, puis vérifier les réponses,
-les identités, les logs et le port enregistré dans les preuves. Vérifier aussi
-le montage en lecture seule, les cas invalides et sans modèle. Laisser une
-observation concrète ; l'auteur documentera sa réponse et sa relance.
-Ne pas fusionner avant les contrôles et cette revue.
+The evidence files and report were added after this commit.
+
+Report: [Week 3 team report](reports/week-03-team.md).
+
+Evidence: [Lab 5 execution records](reports/lab5-20261022/), including:
+
+- [Successful deployment check](reports/lab5-20261022/check.log)
+- [Incorrect expected revision](reports/lab5-20261022/wrong-commit.log)
+- [Container logs without a model](reports/lab5-20261022/missing-container.log)
+- [Tests inside the image](reports/lab5-20261022/container-tests.log)
+
+## Limitations and Requested Review
+
+I completed the local and Docker checks described above. No remote CI execution or approval from another team member is claimed.
+
+The inherited model was trained from a modified working tree, this provenance limitation is documented. 
+
+For review, follow only the README's “Deploy — Lab 5” section on this branch. Change the host port, for example from 8000 to 8010, then verify the responses, deployment identities, logs, and corresponding evidence. Also verify the read-only mount, invalid-input behavior, and missing-model behavior.
+
+Leave a concrete review observation. I will document my response and any subsequent verification.
+
+Merge only after this review and successful checks.
