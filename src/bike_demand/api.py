@@ -1,11 +1,16 @@
 """Serve a trusted, previously evaluated artifact; never train in this service."""
 
+import hashlib
+import io
 import json
 import logging
 import math
 import os
+import time
+import uuid
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Annotated, Any
 
@@ -17,10 +22,30 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, ConfigDict, Field
 
-from bike_demand.preflight import sha256
 from bike_demand.validate import FEATURES
 
-LOGGER = logging.getLogger(__name__)
+EVENTS = logging.getLogger("bike_demand.events")
+if not EVENTS.handlers:
+    handler = logging.StreamHandler()
+    handler.setFormatter(logging.Formatter("%(message)s"))
+    EVENTS.addHandler(handler)
+EVENTS.setLevel(logging.INFO)
+EVENTS.propagate = False
+
+
+def event(name: str, **fields):
+    EVENTS.info(
+        json.dumps(
+            {
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "event": name,
+                **fields,
+            },
+            allow_nan=False,
+        )
+    )
+
+
 Normalised = Annotated[float, Field(strict=True, ge=0, le=1, allow_inf_nan=False)]
 
 
@@ -50,6 +75,7 @@ class PredictionOutput(BaseModel):
 class LoadedModel:
     model: Any
     version: str
+    sha256: str
 
 
 def infer(loaded: LoadedModel, payload: PredictionInput) -> float:
@@ -72,13 +98,15 @@ def load_artifact(directory: Path) -> LoadedModel:
     if metadata["features"] != list(FEATURES):
         raise ValueError("metadata feature order differs from the training contract")
     path = directory / "model.joblib"
-    if sha256(path) != metadata["model_sha256"]:
+    model_bytes = path.read_bytes()
+    digest = hashlib.sha256(model_bytes).hexdigest()
+    if digest != metadata["model_sha256"]:
         raise ValueError("model checksum differs from metadata")
     # joblib is executable serialization: load only trusted team artifacts.
-    model = joblib.load(path)
+    model = joblib.load(io.BytesIO(model_bytes))
     if list(getattr(model, "feature_names_in_", [])) != list(FEATURES):
         raise ValueError("model feature order differs from metadata")
-    loaded = LoadedModel(model=model, version=version)
+    loaded = LoadedModel(model=model, version=version, sha256=digest)
     probe = PredictionInput(
         season=1,
         yr=0,
@@ -101,18 +129,54 @@ def create_app(artifact_dir: Path | None = None) -> FastAPI:
     @asynccontextmanager
     async def lifespan(app: FastAPI):
         app.state.loaded_model = None
+        app.state.source_commit = os.environ.get("SOURCE_COMMIT", "unknown")
         directory = artifact_dir or Path(os.environ.get("MODEL_DIR", "artifacts"))
         try:
             app.state.loaded_model = load_artifact(directory)
-        except Exception:
+        except Exception as error:
             # Keep the HTTP service alive so readiness and valid requests return 503.
-            LOGGER.exception("Model unavailable from %s", directory)
+            event(
+                "model_unavailable",
+                reason=type(error).__name__,
+                action="Check trusted model, metadata, checksum and feature contract; restart",
+                source_commit=app.state.source_commit,
+            )
         try:
             yield
         finally:
             app.state.loaded_model = None
 
     app = FastAPI(title="Bike Demand Prediction API", lifespan=lifespan)
+
+    @app.middleware("http")
+    async def log_request(request: Request, call_next):
+        started = time.perf_counter()
+        request_id = uuid.uuid4().hex
+        loaded = app.state.loaded_model
+        status = 500
+        try:
+            try:
+                response = await call_next(request)
+            except Exception:
+                response = JSONResponse(
+                    status_code=500, content={"detail": "Internal server error"}
+                )
+            status = response.status_code
+            response.headers["X-Request-ID"] = request_id
+            return response
+        finally:
+            route = request.scope.get("route")
+            event(
+                "request_completed",
+                request_id=request_id,
+                method=request.method,
+                route=getattr(route, "path", "<unmatched>"),
+                status=status,
+                duration_ms=round((time.perf_counter() - started) * 1000, 3),
+                model_version=loaded.version if loaded else None,
+                model_sha256=loaded.sha256 if loaded else None,
+                source_commit=app.state.source_commit,
+            )
 
     @app.exception_handler(RequestValidationError)
     async def invalid_request(request: Request, error: RequestValidationError):
@@ -136,7 +200,12 @@ def create_app(artifact_dir: Path | None = None) -> FastAPI:
     @app.get("/health")
     def health():
         loaded = available()
-        return {"status": "ok", "model_version": loaded.version}
+        return {
+            "status": "ok",
+            "model_version": loaded.version,
+            "model_sha256": loaded.sha256,
+            "source_commit": app.state.source_commit,
+        }
 
     @app.post("/predict", response_model=PredictionOutput)
     def predict(payload: PredictionInput):
@@ -145,7 +214,11 @@ def create_app(artifact_dir: Path | None = None) -> FastAPI:
             prediction = infer(loaded, payload)
         except Exception as error:
             app.state.loaded_model = None
-            LOGGER.exception("Model inference failed")
+            event(
+                "model_inference_failed",
+                reason=type(error).__name__,
+                source_commit=app.state.source_commit,
+            )
             raise HTTPException(status_code=503, detail="Model unavailable") from error
         return PredictionOutput(prediction=prediction, model_version=loaded.version)
 

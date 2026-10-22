@@ -1,0 +1,1 @@
+docker run --rm --network none --entrypoint uv sha256:02615bba3ec726d316b2e73863da6bf8e52dd03a6ea74c5ed29a9ae7f7d30f65 run --locked --no-sync pytest -q

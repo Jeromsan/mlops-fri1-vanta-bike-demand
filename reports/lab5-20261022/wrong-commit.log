@@ -1,0 +1,9 @@
+{"claim": "health_status", "expected": 200, "observed": 200, "result": "ok"}
+{"claim": "ready", "expected": "ok", "observed": "ok", "result": "ok"}
+{"claim": "model_version", "expected": "baseline-df42e666d6d6", "observed": "baseline-df42e666d6d6", "result": "ok"}
+{"claim": "model_sha256", "expected": "fd98ceafc57a5babce61ce703cbf9cb8d1f83c6820b0b34fe30ad1a0fc49c304", "observed": "fd98ceafc57a5babce61ce703cbf9cb8d1f83c6820b0b34fe30ad1a0fc49c304", "result": "ok"}
+{"claim": "source_commit", "expected": "deliberately-wrong", "observed": "baee60a4dd24b4a30deb84320b6b4bc33c0e4def", "result": "FAIL"}
+{"claim": "prediction_status", "expected": 200, "observed": 200, "result": "ok"}
+{"claim": "finite_nonnegative_prediction", "expected": true, "observed": true, "result": "ok"}
+{"claim": "prediction_model_version", "expected": "baseline-df42e666d6d6", "observed": "baseline-df42e666d6d6", "result": "ok"}
+{"claim": "invalid_status", "expected": 422, "observed": 422, "result": "ok"}

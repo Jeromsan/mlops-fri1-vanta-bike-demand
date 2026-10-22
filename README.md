@@ -9,14 +9,7 @@ No Docker, cloud account or MLflow server is needed this week.
 
 The service loads a trusted, already evaluated `model.joblib` together with
 `model-metadata.json` once during startup. It never trains or repairs artifacts.
-Python 3.12 and the committed lock are required:
-
-```powershell
-uv sync --locked
-uv run --locked pytest -q
-uv run --locked python scripts/verify_saved_model.py
-uv run --locked uvicorn bike_demand.api:app --host 127.0.0.1 --port 8000
-```
+Python 3.12 and the committed dependency lock are required.
 
 The verification script reads the existing artifact and evaluation record and
 recomputes only validation MAE; it does not fit a model or score the held test.
@@ -52,38 +45,22 @@ floats, already normalised; no scaling is applied. Every extra field is rejected
 including `cnt`, `casual`, `registered`, `instant` and `dteday`. Predictors are
 ordered by the training `FEATURES` contract, regardless of JSON key order.
 
-Example in PowerShell (also saved as a request fixture):
-
-```powershell
-curl.exe -i -H "Content-Type: application/json" --data-binary "@tests/fixtures/predict-valid.json" http://127.0.0.1:8000/predict
-curl.exe -i -H "Content-Type: application/json" --data-binary "{}" http://127.0.0.1:8000/predict
-curl.exe -i http://127.0.0.1:8000/health
-```
+A valid request example is saved in `tests/fixtures/predict-valid.json`.
 
 A successful response contains `prediction` (finite and nonnegative, rentals per
 hour) and `model_version` read from the metadata bound to the loaded model.
 Versions and predictions are never hard-coded. `/docs` exposes the schema.
 
-### Container build, tests and serving (PowerShell)
+### Container build, tests and serving
 
-Start Docker Desktop with Linux containers. Build from the committed revision:
-
-```powershell
-docker build --build-arg "SOURCE_COMMIT=$(git rev-parse HEAD)" -t bike-demand:lab4 .
-docker run --rm --network none --entrypoint uv bike-demand:lab4 run --locked --no-sync pytest -q
-docker image inspect bike-demand:lab4 --format '{{.Id}}'
-docker run -d --name bike-demand-lab4 -p 127.0.0.1:8000:8000 --mount "type=bind,source=$((Resolve-Path artifacts).Path),target=/app/artifacts,readonly" bike-demand:lab4
-```
+Start Docker Desktop with Linux containers. Build from the committed revision,
+passing its Git SHA through the `SOURCE_COMMIT` build argument. Run the tests
+in the image, record its image ID, and mount the trusted artifacts read-only.
 
 The image listens on `0.0.0.0:8000`; the published host port is limited to
-`127.0.0.1`. Artifacts stay outside the image and are mounted read-only. Use the
-curl commands above, save the request and response as text, then collect logs:
-
-```powershell
-docker logs bike-demand-lab4
-docker stop bike-demand-lab4
-docker rm bike-demand-lab4
-```
+`127.0.0.1`. Artifacts stay outside the image and are mounted read-only.
+Send requests to both routes and save the responses and container logs.
+Stop and remove the container after verification.
 
 For the no-model review, run the same image without the mount and repeat both
 routes: health and a valid prediction must return 503, an invalid request 422.
@@ -275,3 +252,125 @@ personal data. Team evidence goes in `reports/lab-01.md` and
 Each weekly report is due Sunday 23:59 of the same week (published time zone).
 Assessment policy comes from the instructor, not this repository.
 See `BACKLOG.md` for later labs.
+
+## Deploy — Lab 5
+
+This procedure serves the evaluated Lab 4 model only. It never trains or repairs
+artifacts. Work from the repository root. Docker Desktop
+must use Linux containers; install Git, Python 3.12 and uv 0.12.x, then run
+`uv sync --locked`. Obtain the trusted `model.joblib` and matching
+`model-metadata.json` from the team's Lab 4 artifact custodian. A clone alone
+cannot serve predictions. Never load an unknown joblib file.
+
+The approved local Lab 4 record is version `baseline-df42e666d6d6`, SHA-256
+`fd98ceafc57a5babce61ce703cbf9cb8d1f83c6820b0b34fe30ad1a0fc49c304`.
+See `reports/lab4-saved-model-check.json` and `reports/week-02-team.md`.
+Its training tree was dirty: its training commit does not fully identify the
+training source. We preserve this limitation and reuse the artifact unchanged.
+
+### Prepare independent expectations and build
+
+Use a committed checkout. Review `git status --short`: source, Dockerfile,
+README, lock and tests must have no pending changes. An untracked teaching PDF
+under `lab/` is excluded from the Docker context. Do not claim a dirty build
+matches HEAD. Save new evidence under a new run directory rather than overwriting
+an earlier run. Expected values come from the approved artifact record and Git,
+never from `/health`.
+
+Dependencies are installed with `uv sync --locked`. No dependency was added for
+Lab 5. The image contains source, tests and the public frozen input CSV needed
+by infrastructure checks, but no team artifact, tracking store, metrics output
+or team report content. The empty Week 1 report path only satisfies preflight's
+file-presence check. Docker's build argument records a claim: clean source and
+the saved build command are necessary to substantiate it.
+
+Before building, record the full Git commit, clean tracked-file status, model
+version and independently computed file SHA-256 under a new `reports/lab5-*`
+directory. Compare both artifact identities with the approved record above.
+Build the root Dockerfile with `SOURCE_COMMIT` set to that Git commit; tag it
+`bike-demand:lab5`. Save the build output, exit code and image ID.
+The exact commands used for the recorded run are available in
+[the build record](reports/lab5-20261022/build-command.txt) and
+[the execution record](reports/lab5-20261022/commands.json).
+
+### Start, check and inspect
+
+Choose free host ports. Keep the container port 8000. `MODEL_DIR` points to the
+read-only mount. Use `/models` as the container location and publish host port
+8000 on `127.0.0.1` only. Set `MODEL_DIR=/models` at launch.
+
+Run `scripts/smoke_api.py` from the host with the service URL and the
+`--expected-version`, `--expected-sha256` and `--expected-commit` arguments.
+Use the approved identity above and the source commit recorded before building.
+Save its output and exit code. Send the fixture in
+`tests/fixtures/predict-valid.json` to `POST /predict`, then an empty JSON object
+to the same route. Save these responses and `GET /health`, including headers.
+Read and save container logs with Docker Desktop or `docker logs`.
+
+The checker uses only HTTP to contact the service. It waits at most 30 seconds
+for readiness (each request has a timeout of at most 5 seconds), checks all three
+identities, predicts, then sends `hr=24` and requires 422. Every claim prints
+expected, observed and result. Exit 0 means all checks pass; other exits mean
+failure. The startup wait plus the two prediction calls is bounded, apart from
+operating-system DNS resolution. This localhost procedure avoids DNS.
+`--expect-unavailable` checks 503/503/422 only; it does not certify identity.
+
+### Observe deliberate failures and clean up
+
+Keep the same image and correct expectations; first change only the expected
+code revision. The checker must return 1 even though the service returns 200.
+Then run without a model: health and valid prediction must be 503, invalid
+prediction 422. Startup should emit `model_unavailable` without a traceback or
+local path. These checks do not change the approved artifact.
+
+Repeat the host check with `--expected-commit deliberately-wrong` and require
+exit 1. Start a second container from the same image without the model mount,
+with `MODEL_DIR=/models` and host port 8001 restricted to `127.0.0.1`.
+Save its HTTP responses and logs. The normal checker must fail;
+`--expect-unavailable` is only a diagnostic check of the expected 503/503/422
+state. Record image and container IDs, port bindings and read-only mount
+configuration. Stop and remove both temporary containers once logs are saved.
+
+### Ten deployment decisions
+
+| Question | Choice | Rejected alternative and reason |
+| --- | --- | --- |
+| settings | `MODEL_DIR` and read-only mount at launch; host port chosen at launch; source commit at build | Editing Python for each machine would make the same image behave as different source |
+| model | Trusted evaluated Lab 4 pair, verified before and during loading | Retraining at startup changes the approved model and violates the lab |
+| ready | Model checksum, feature order and finite nonnegative probe pass; inference failure clears readiness | A live HTTP process alone cannot promise predictions |
+| broken | Keep HTTP running; health and valid prediction return 503; invalid input stays 422 | Exiting immediately prevents external inspection of the unavailable state |
+| log line | One `request_completed` JSON line: UTC time, generated request ID, method, route template, status, duration, model identity and source commit | Raw request dumps leak content and are difficult to correlate |
+| secrets | No body, auth header, query, client address, arbitrary unmatched path or exception text; only safe error class for lifecycle events | Tracebacks and full URLs can expose private values |
+| identity | Metadata version plus SHA-256 of the exact bytes deserialized, with image source commit | Version labels alone can refer to different bytes |
+| expected | Final checker obtains approved identity before launch from the Lab 4 record and source Git commit | Copying expected values from the API makes the comparison circular |
+| promise | At check time this image answers locally with the expected code/model, accepts valid input and rejects invalid input | A running container is insufficient; this check promises neither accuracy, availability over time nor production readiness |
+| failure | Wrong expected commit fails; absent mount produces 503 and a safe startup event | A simulated failure provides no evidence about the running image |
+
+Application events are JSON with an `event` field. Uvicorn access logs are
+disabled; its lifecycle messages are separate non-JSON server messages.
+`model_unavailable` and `model_inference_failed` are lifecycle/error events,
+not additional request-completion events. Unknown paths are logged as
+`<unmatched>` to avoid exposing private path content. Request IDs are generated
+by the service rather than trusting client-supplied identifiers.
+
+### Human review and handover
+
+Each actual member needs their own substantive contribution and PR into `main`,
+and must review another member's PR. Do not split already completed work into
+fictional ownership. The reviewer follows only this section, changes the host port
+to a free port (for example 8010), and checks that the HTTP URL and saved port
+mapping reflect it. They also verify the non-default `/models` configuration,
+the read-only mount, successful identity check and deliberate failures.
+Record one actionable finding, the author's response and the actual rerun.
+
+Final check owner: **to be designated by the team before acceptance**.
+Record their name, checked commit, image and evidence directory in the team
+report. Local tests and Docker HTTP evidence are separate from remote CI.
+The current workflow does not certify this Docker deployment. Lab 6 extends CI;
+create annotated `m3` only after both Labs 5 and 6 are reviewed and merged.
+The individual `reports/week-3.md` belongs on personal `main`, with no PR or CI;
+it records actual work, decision, blocker and assistance, including AI help.
+
+Execution status and exact results belong in `reports/week-03-team.md` and its
+linked raw logs. This procedure describes the steps; the linked evidence
+records the commands and results actually observed.

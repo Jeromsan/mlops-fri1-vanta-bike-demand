@@ -1,0 +1,1 @@
+{"source_commit": "baee60a4dd24b4a30deb84320b6b4bc33c0e4def", "excluded_paths_absent": {"artifacts/model.joblib": true, "tracking": true, "reports/metrics.json": true, "reports/metrics-history.jsonl": true, ".env": true, ".git": true, ".aws": true, ".ssh": true, "WORKING-AGREEMENT.md": true, "lab": true}, "report_placeholder_empty": true}

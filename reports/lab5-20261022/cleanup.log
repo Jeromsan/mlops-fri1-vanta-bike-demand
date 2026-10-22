@@ -1,0 +1,8 @@
+docker stop bike-demand-lab5 bike-demand-lab5-missing
+bike-demand-lab5
+bike-demand-lab5-missing
+exit=0
+docker rm bike-demand-lab5 bike-demand-lab5-missing
+bike-demand-lab5
+bike-demand-lab5-missing
+exit=0

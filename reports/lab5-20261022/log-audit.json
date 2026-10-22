@@ -1,0 +1,23 @@
+{
+  "container": {
+    "json_events": 9,
+    "completion_events": 9,
+    "unique_request_ids": 9,
+    "statuses": {
+      "200": 6,
+      "422": 3
+    },
+    "http_response_ids_each_logged_once": true
+  },
+  "missing-container": {
+    "json_events": 14,
+    "completion_events": 13,
+    "unique_request_ids": 13,
+    "statuses": {
+      "503": 10,
+      "422": 3
+    },
+    "http_response_ids_each_logged_once": true
+  },
+  "artifact_sha256_after": "fd98ceafc57a5babce61ce703cbf9cb8d1f83c6820b0b34fe30ad1a0fc49c304"
+}

@@ -1,0 +1,191 @@
+[
+  {
+    "name": "start",
+    "command": [
+      "docker",
+      "run",
+      "-d",
+      "--name",
+      "bike-demand-lab5",
+      "-p",
+      "127.0.0.1:8000:8000",
+      "-e",
+      "MODEL_DIR=/models",
+      "--mount",
+      "type=bind,source=C:\\Users\\jerom\\Documents\\ECE\\Inge-5\\MlOps\\mlops-fri1-vanta-bike-demand\\artifacts,target=/models,readonly",
+      "sha256:02615bba3ec726d316b2e73863da6bf8e52dd03a6ea74c5ed29a9ae7f7d30f65"
+    ],
+    "expected_exit": 0
+  },
+  {
+    "name": "check",
+    "command": [
+      "uv",
+      "run",
+      "--locked",
+      "--no-sync",
+      "python",
+      "scripts/smoke_api.py",
+      "http://127.0.0.1:8000",
+      "--expected-version",
+      "baseline-df42e666d6d6",
+      "--expected-sha256",
+      "fd98ceafc57a5babce61ce703cbf9cb8d1f83c6820b0b34fe30ad1a0fc49c304",
+      "--expected-commit",
+      "baee60a4dd24b4a30deb84320b6b4bc33c0e4def"
+    ],
+    "expected_exit": 0
+  },
+  {
+    "name": "health",
+    "command": [
+      "curl.exe",
+      "-sS",
+      "-i",
+      "http://127.0.0.1:8000/health"
+    ],
+    "expected_exit": 0
+  },
+  {
+    "name": "valid",
+    "command": [
+      "curl.exe",
+      "-sS",
+      "-i",
+      "-H",
+      "Content-Type: application/json",
+      "--data-binary",
+      "@tests/fixtures/predict-valid.json",
+      "http://127.0.0.1:8000/predict"
+    ],
+    "expected_exit": 0
+  },
+  {
+    "name": "invalid",
+    "command": [
+      "curl.exe",
+      "-sS",
+      "-i",
+      "-H",
+      "Content-Type: application/json",
+      "--data-binary",
+      "{}",
+      "http://127.0.0.1:8000/predict"
+    ],
+    "expected_exit": 0
+  },
+  {
+    "name": "wrong-commit",
+    "command": [
+      "uv",
+      "run",
+      "--locked",
+      "--no-sync",
+      "python",
+      "scripts/smoke_api.py",
+      "http://127.0.0.1:8000",
+      "--expected-version",
+      "baseline-df42e666d6d6",
+      "--expected-sha256",
+      "fd98ceafc57a5babce61ce703cbf9cb8d1f83c6820b0b34fe30ad1a0fc49c304",
+      "--expected-commit",
+      "deliberately-wrong"
+    ],
+    "expected_exit": 1
+  },
+  {
+    "name": "start-missing",
+    "command": [
+      "docker",
+      "run",
+      "-d",
+      "--name",
+      "bike-demand-lab5-missing",
+      "-p",
+      "127.0.0.1:8001:8000",
+      "-e",
+      "MODEL_DIR=/models",
+      "sha256:02615bba3ec726d316b2e73863da6bf8e52dd03a6ea74c5ed29a9ae7f7d30f65"
+    ],
+    "expected_exit": 0
+  },
+  {
+    "name": "missing-check",
+    "command": [
+      "uv",
+      "run",
+      "--locked",
+      "--no-sync",
+      "python",
+      "scripts/smoke_api.py",
+      "http://127.0.0.1:8001",
+      "--expected-version",
+      "baseline-df42e666d6d6",
+      "--expected-sha256",
+      "fd98ceafc57a5babce61ce703cbf9cb8d1f83c6820b0b34fe30ad1a0fc49c304",
+      "--expected-commit",
+      "baee60a4dd24b4a30deb84320b6b4bc33c0e4def",
+      "--expect-unavailable"
+    ],
+    "expected_exit": 0
+  },
+  {
+    "name": "missing-normal-check",
+    "command": [
+      "uv",
+      "run",
+      "--locked",
+      "--no-sync",
+      "python",
+      "scripts/smoke_api.py",
+      "http://127.0.0.1:8001",
+      "--expected-version",
+      "baseline-df42e666d6d6",
+      "--expected-sha256",
+      "fd98ceafc57a5babce61ce703cbf9cb8d1f83c6820b0b34fe30ad1a0fc49c304",
+      "--expected-commit",
+      "baee60a4dd24b4a30deb84320b6b4bc33c0e4def",
+      "--startup-timeout",
+      "1"
+    ],
+    "expected_exit": 1
+  },
+  {
+    "name": "missing-health",
+    "command": [
+      "curl.exe",
+      "-sS",
+      "-i",
+      "http://127.0.0.1:8001/health"
+    ],
+    "expected_exit": 0
+  },
+  {
+    "name": "missing-valid",
+    "command": [
+      "curl.exe",
+      "-sS",
+      "-i",
+      "-H",
+      "Content-Type: application/json",
+      "--data-binary",
+      "@tests/fixtures/predict-valid.json",
+      "http://127.0.0.1:8001/predict"
+    ],
+    "expected_exit": 0
+  },
+  {
+    "name": "missing-invalid",
+    "command": [
+      "curl.exe",
+      "-sS",
+      "-i",
+      "-H",
+      "Content-Type: application/json",
+      "--data-binary",
+      "{}",
+      "http://127.0.0.1:8001/predict"
+    ],
+    "expected_exit": 0
+  }
+]
