@@ -11,16 +11,10 @@ The old container test log records 5 failed and 44 passed tests
 The earlier build output is saved in `week-02-docker-build.log`.
 No new Lab 3 training run was performed for this report. An updated Lab 3
 report from main at 87aa3da is preserved in `week-02-lab3.md`. It records
-<<<<<<< HEAD
-49 passing tests and a separate model, baseline-9bc4824e1d60. Its test log
-was removed from main and the referenced run and missing-lock logs are absent.
-Those results have not been independently verified here. Lab 4 uses the
-local model identified below, not that separate artifact.
-=======
-49 passing tests and a separate model, baseline-9bc4824e1d60. The earlier failed test log is retained here; the successful test log and
-the referenced run and missing-lock logs are not available in this checkout.
+49 passing tests and a separate model, baseline-9bc4824e1d60. The earlier failed
+test log is retained here; the successful test log and the referenced run and
+missing-lock logs are not available in this checkout.
 Lab 4 uses the local model identified below, not that separate artifact.
->>>>>>> main
 
 We reused the saved model in artifacts/model.joblib and its metadata:
 
@@ -106,24 +100,7 @@ Other evidence: `lab4-image-id.txt`,
 We did not use screenshots or run remote CI for these checks.
 
 
-<<<<<<< HEAD
-## Remaining work
-
-- Open the Lab 4 PR with the implementation, evidence and smoke script.
-- Each member must submit a PR for their contribution and review another member.
-  The review must include an invalid request and a missing-model case.
-- Merge only after human approval and successful checks.
-- Create the annotated m2 tag on the integration commit covering Labs 3 and 4,
-  then add its link and a short release note here.
-- Document how teammates can retrieve the trusted model and metadata.
-- Write the individual reports/week-2.md on main in the personal repository,
-  without a PR or CI. Include the actual contribution, one decision, one blocker
-  and assistance used.
-
-Human reviews, the m2 tag and the individual report have not been completed
-or verified in this session.
-
-# Week 2, Lab 3: team evidence
+## Lab 3 team evidence
 
 ## Team and roles
 
@@ -251,11 +228,10 @@ different machine.
 
 No Lab 3 screenshots were captured. The build and run logs linked above are
 the primary command evidence.
-=======
+
 ## Integration
 
 Lab 4 PR #3 was merged into main at commit 8632ea1.
 The team has confirmed that the reviews and validations are complete.
 
-The annotated m2 release tag is still pending.
->>>>>>> main
+The annotated `m2` release tag is present and points to commit `edcc0f7`.

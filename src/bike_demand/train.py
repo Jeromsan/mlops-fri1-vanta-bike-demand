@@ -48,28 +48,15 @@ def load_config(path: Path) -> dict:
 def select_features(frame: pd.DataFrame, features: list[str]) -> pd.DataFrame:
     if features != list(FEATURES):
         raise ValueError("features: require the contract's ordered predictors")
-<<<<<<< HEAD
-<<<<<<< HEAD
     missing = set(features) - set(frame.columns)
     if missing:
         raise ValueError(f"features: missing predictors: {', '.join(sorted(missing))}")
-=======
->>>>>>> e7025fd (Complete Lab 2 validated and tracked baseline)
-=======
-    missing = set(features) - set(frame.columns)
-    if missing:
-        raise ValueError(f"features: missing predictors: {', '.join(sorted(missing))}")
->>>>>>> main
     return frame.loc[:, features].copy()
 
 
 def compare_mean(
     train_target: pd.Series, validation_target: pd.Series
 ) -> tuple[float, float]:
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> main
     if train_target.empty or validation_target.empty:
         raise ValueError("baseline: training and validation targets must be nonempty")
     mean = float(train_target.mean())
@@ -84,23 +71,6 @@ def fit_evaluate(train: pd.DataFrame, validation: pd.DataFrame, config: dict):
     model = RandomForestRegressor(**config["model"])
     model.fit(select_features(train, features), train["cnt"])
     predictions = model.predict(select_features(validation, features))
-<<<<<<< HEAD
-=======
-    mean = float(train_target.mean())
-    predictions = np.full(len(validation_target), mean)
-    mae = float(mean_absolute_error(validation_target, predictions))
-    return mean, mae
-
-
-def fit_evaluate(train: pd.DataFrame, validation: pd.DataFrame, config: dict):
-    train_features = select_features(train, config["features"])
-    validation_features = select_features(validation, config["features"])
-    model = RandomForestRegressor(**config["model"])
-    model.fit(train_features, train["cnt"])
-    predictions = model.predict(validation_features)
->>>>>>> e7025fd (Complete Lab 2 validated and tracked baseline)
-=======
->>>>>>> main
     mae = float(mean_absolute_error(validation["cnt"], predictions))
     return model, predictions, mae
 

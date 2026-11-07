@@ -36,42 +36,6 @@ COUNTS = ("cnt", "casual", "registered")
 
 
 def check_domains(frame: pd.DataFrame) -> None:
-<<<<<<< HEAD
-<<<<<<< HEAD
-    for field, (minimum, maximum) in DOMAINS.items():
-        values = frame[field].to_numpy(dtype=float)
-        if (
-            not np.isfinite(values).all()
-            or (values < minimum).any()
-            or (values > maximum).any()
-            or (values % 1 != 0).any()
-        ):
-            raise ValueError(
-                f"{field}: values must be finite integers in [{minimum}, {maximum}]"
-            )
-
-    for field in NORMALISED:
-        values = frame[field].to_numpy(dtype=float)
-        if not np.isfinite(values).all() or (values < 0).any() or (values > 1).any():
-            raise ValueError(f"{field}: values must be finite and in [0, 1]")
-
-    for field in COUNTS:
-        values = frame[field].to_numpy(dtype=float)
-        if (
-            not np.isfinite(values).all()
-            or (values < 0).any()
-            or (values % 1 != 0).any()
-        ):
-            raise ValueError(f"{field}: values must be finite nonnegative integers")
-
-    dates = frame["dteday"]
-    if (dates < pd.Timestamp("2011-01-01")).any() or (
-        dates > pd.Timestamp("2012-12-31")
-    ).any():
-        raise ValueError("dteday: dates must be between 2011-01-01 and 2012-12-31")
-=======
-=======
->>>>>>> main
     for field, (lower, upper) in DOMAINS.items():
         values = frame[field]
         if not (
@@ -91,10 +55,6 @@ def check_domains(frame: pd.DataFrame) -> None:
 
     if not frame["dteday"].between("2011-01-01", "2012-12-31").all():
         raise ValueError("dteday: require dates between 2011-01-01 and 2012-12-31")
-<<<<<<< HEAD
->>>>>>> e7025fd (Complete Lab 2 validated and tracked baseline)
-=======
->>>>>>> main
 
 
 def load_data(path: Path | str) -> pd.DataFrame:
