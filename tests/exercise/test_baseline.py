@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from bike_demand.preflight import sha256
+from bike_demand.preflight import check_snapshot, sha256
 from bike_demand.split import split_data
 from bike_demand.train import (
     compare_mean,
@@ -130,6 +130,16 @@ def test_mean_uses_train_only():
     mean, mae = compare_mean(pd.Series([10, 30]), pd.Series([40, 60]))
     assert mean == 20
     assert mae == 30
+
+
+def test_frozen_training_mean_mae_matches_week1_record():
+    root = Path(__file__).parents[2]
+    check_snapshot(root)
+    partitions = split_data(load_data(root / "data/raw/hour.csv"))
+    _, validation_mae = compare_mean(
+        partitions["train"]["cnt"], partitions["validation"]["cnt"]
+    )
+    assert validation_mae == 154.23179306864967
 
 
 def test_saved_model_readback_rerun_and_held_test(tmp_path):

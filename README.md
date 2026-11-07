@@ -222,7 +222,30 @@ uv run --locked mlflow server --backend-store-uri sqlite:///tracking/mlflow.db -
 
 `artifacts/`, `tracking/` and `.venv/` are ignored by Git. Team metrics may be
 committed as evidence; never commit credentials or individual private reports.
-CI currently checks only infrastructure/quality; expand it in Week 3.
+
+## CI — Lab 6
+
+The GitHub Actions workflow runs on pull requests targeting `main`, pushes to
+`main`, and manual dispatch. On a clean Ubuntu runner it installs only from the
+committed lock file, checks the frozen-data preflight, runs Ruff lint and format
+checks, runs the complete test suite, then builds the Docker image without
+pushing it. The order puts fast checks before tests and the container build so
+the first failure is easier to diagnose.
+
+Reproduce the checks locally from the repository root:
+
+```bash
+uv sync --locked
+uv run --locked python -m bike_demand.preflight
+uv run --locked ruff check .
+uv run --locked ruff format --check .
+uv run --locked pytest -q
+docker build --build-arg SOURCE_COMMIT="$(git rev-parse HEAD)" -t bike-demand:ci .
+```
+
+CI verifies code, tests, and that the image builds. It does not evaluate model
+quality on the held-out test period, verify a live Cloud Run deployment, or
+certify behavior on operating systems other than its Ubuntu runner.
 
 ## Support and individual reports
 

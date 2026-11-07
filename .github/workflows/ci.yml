@@ -1,4 +1,4 @@
-name: Week 1 checks
+name: Week 3 CI
 
 on:
   push:
@@ -26,5 +26,6 @@ jobs:
       - run: uv run --locked python -m bike_demand.preflight
       - run: uv run --locked ruff check .
       - run: uv run --locked ruff format --check .
-      - run: uv run --locked pytest -q -m infra
-      - run: uv run --locked pytest -q -m lab1
+      - run: uv run --locked pytest -q
+      - name: Build container image
+        run: docker build --build-arg SOURCE_COMMIT="${GITHUB_SHA}" -t bike-demand:ci .
