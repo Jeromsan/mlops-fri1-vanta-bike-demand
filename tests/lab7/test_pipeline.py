@@ -263,3 +263,8 @@ def test_seed_variation_changes_only_the_seed(project):
     assert result["settings"]["random_state"] == 42  # the recorded accepted setting
     assert result["range"] == result["max"] - result["min"]
     assert result["validation_rows"] == project.rows["validation"]
+
+
+def test_usage_errors_never_look_like_a_rejection(project, capsys):
+    assert main(["run"]) == 1  # missing --candidate; argparse alone would exit 2
+    assert main(["--help"]) == 0

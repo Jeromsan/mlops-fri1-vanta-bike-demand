@@ -881,7 +881,11 @@ def main(argv=None) -> int:
     seeds.add_argument("--seeds", type=int, nargs="+", default=list(range(10)))
     seeds.add_argument("--output", type=Path)
 
-    args = parser.parse_args(argv)
+    try:
+        args = parser.parse_args(argv)
+    except SystemExit as stop:
+        # argparse uses 2 for usage errors; 2 means 'rejected' here.
+        return 0 if stop.code == 0 else 1
     root = Path.cwd()
     try:
         if args.command == "run":
