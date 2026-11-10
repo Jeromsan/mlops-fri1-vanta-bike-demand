@@ -1,0 +1,57 @@
+{
+  "record_type": "seed_variation",
+  "measured_at": "2026-11-10T18:41:50.967880+00:00",
+  "purpose": "Execution variation of the accepted RF settings, used to size the incumbent margin before any candidate is evaluated.",
+  "config": "configs/baseline.yaml",
+  "settings": {
+    "n_estimators": 50,
+    "max_depth": 10,
+    "random_state": 42,
+    "n_jobs": 1
+  },
+  "varied": "random_state only",
+  "data_sha256": "e03de4ee4ef4dc376ac6e04bf829673c6269e8eba5c60fa121640fa2f829504f",
+  "validation_rows": 4358,
+  "validation_mae": {
+    "0": 86.68970911041612,
+    "1": 86.70690132763286,
+    "2": 86.73524877394573,
+    "3": 86.54898359660837,
+    "4": 86.9057109337621,
+    "5": 86.68962135288598,
+    "6": 86.5908117338771,
+    "7": 87.10988732733819,
+    "8": 86.85145623264734,
+    "9": 86.42272025379859
+  },
+  "min": 86.42272025379859,
+  "max": 87.10988732733819,
+  "range": 0.687167073539598,
+  "mean": 86.72510506429124,
+  "std": 0.19438700504596892,
+  "provenance": {
+    "commit": "abb895c29d936e793232d700bdcec9b020490278",
+    "branch": "lab7/pipeline-gate",
+    "source_dirty": false,
+    "dirty_paths": [],
+    "inputs": {
+      "configs/baseline.yaml": {
+        "tracked": true,
+        "unchanged_since_head": true,
+        "last_commit": "101e2f433053a9d5fb24de3952dcfeb15a1e3a74",
+        "last_commit_time": "2026-10-09T10:08:58+02:00",
+        "sha256": "3dca0849b8c7ec3c55dbcde93a20cb35811dd2994b004dcb6c6d482e203684a2"
+      }
+    },
+    "uv_lock_sha256": "514c77cf06e91fba6ff683d7985fb93dfea8e232109bd54c7d6292919d79477d"
+  },
+  "environment": {
+    "python": "3.12.15",
+    "platform": "Linux-6.18.44-fc-v338-x86_64-with-glibc2.39",
+    "machine": "x86_64",
+    "scikit_learn": "1.9.1",
+    "numpy": "2.5.3",
+    "pandas": "2.3.3"
+  },
+  "limitation": "Seed spread is execution variation on one window; it is not uncertainty about future demand."
+}
