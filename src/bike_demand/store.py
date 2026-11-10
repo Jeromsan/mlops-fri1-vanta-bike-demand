@@ -15,6 +15,7 @@ into a new version directory and then replaces the pointer atomically. A
 rejected candidate therefore cannot change the accepted state.
 """
 
+import hashlib
 import json
 import os
 import shutil
@@ -238,6 +239,20 @@ class Store:
             installed = self.install(source, acceptance)
             return self._move_pointer(installed, current, change)
 
+    def state_digest(self) -> str | None:
+        """One digest over every file under accepted/ (lock excluded).
+
+        Compare it before and after a rejected run: it must not change.
+        """
+        if not self.accepted.exists():
+            return None
+        digest = hashlib.sha256()
+        for path in sorted(self.accepted.rglob("*")):
+            if path.is_file() and path != self.lock_path:
+                name = path.relative_to(self.accepted).as_posix()
+                digest.update(f"{name}\0{sha256(path)}\n".encode())
+        return digest.hexdigest()
+
     def status(self) -> dict:
         current = self.read_current()
         versions = []
@@ -278,6 +293,7 @@ class Store:
             "partial_outputs": sorted(partial),
             "pointer_changes": len(history),
             "lock_held": self.lock_path.exists(),
+            "accepted_state_sha256": self.state_digest(),
         }
 
 

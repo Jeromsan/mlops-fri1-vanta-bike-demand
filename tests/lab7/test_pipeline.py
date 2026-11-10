@@ -72,9 +72,11 @@ def test_rejection_preserves_the_accepted_state(project):
     project.write_policy(operation={"max_model_bytes": 1000})
     commit(project.root, "tight size rule")
     before = accepted_snapshot(project)
+    digest = Store(project.store).status()["accepted_state_sha256"]
     record, path = run(project)
     assert record["outcome"] == "rejected"
     assert record["exit_code"] == 2
+    assert Store(project.store).status()["accepted_state_sha256"] == digest
     assert record["reasons"][0].startswith("model_size: model file is")
     assert accepted_snapshot(project) == before
     # The rejected bytes stay outside accepted/ for review.
