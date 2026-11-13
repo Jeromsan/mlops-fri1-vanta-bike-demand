@@ -60,7 +60,3 @@ Report: [Week 4 team report](week-04-team.md). Design and answers to the lab
 questions: README, section "Pipeline and gate — Lab 7".
 
 ## Reviewer
-
-Leave one actionable observation. Then challenge one claim you did not build
-(suggestions in the team report), keep the raw output, and record the result.
-Inspect CI for the latest pushed commit.
