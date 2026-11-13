@@ -165,3 +165,24 @@ The first API test attempt was blocked by permissions on the Windows temporary d
 The local test output includes a connection interruption from a test HTTP server using a 0.1-second timeout. The suite still finished with 205 passing tests. This message did not appear in the container test run.
 
 The two deprecation warnings concern TestClient and SQLAlchemy. I did not disable assertions to make the tests pass.
+
+## Lab 6 — Local repair simulation
+
+No teammate was available to open the Lab 6 reviewer PR. To exercise the red-to-
+green repair process, I ran a clearly identified local simulation on branch
+`lab6/reviewer-simulation`; this is not a teammate-authored PR or an independent
+review.
+
+The simulated defect removed the deployment checker's comparison of the
+observed `source_commit` with the independently supplied expected commit. The
+existing `test_checker_accepts_only_matching_healthy_service[source_commit]`
+case exposed it: the checker returned success for a service reporting the wrong
+source revision. The red run recorded 1 failed and 205 passed tests in
+[lab6-simulation-red.log](./lab6-simulation-red.log).
+
+The repair restored the `source_commit` identity check in
+`scripts/smoke_api.py`. The targeted deployment-check tests passed (8 passed),
+and the full suite then passed with 206 tests and 2 deprecation warnings. The
+green run is in [lab6-simulation-green.log](./lab6-simulation-green.log).
+This evidence is local and does not claim that GitHub Actions ran the simulated
+defect or repair.
