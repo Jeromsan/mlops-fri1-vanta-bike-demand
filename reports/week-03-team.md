@@ -165,3 +165,34 @@ The first API test attempt was blocked by permissions on the Windows temporary d
 The local test output includes a connection interruption from a test HTTP server using a 0.1-second timeout. The suite still finished with 205 passing tests. This message did not appear in the container test run.
 
 The two deprecation warnings concern TestClient and SQLAlchemy. I did not disable assertions to make the tests pass.
+
+## Lab 6 — Reviewer PR and red-to-green repair
+
+Jeromsan opened [PR #5](https://github.com/Jeromsan/mlops-fri1-vanta-bike-demand/pull/5)
+from `lab6/debug-challenge` to `main` with one deliberate API validation defect.
+The first GitHub Actions run, [run #16](https://github.com/Jeromsan/mlops-fri1-vanta-bike-demand/actions/runs/43392748478),
+failed in the complete pytest step. Its job log is saved in
+[lab6-pr5-red.log](./lab6-pr5-red.log). The first clear symptom was
+`test_loaded_model_and_shutdown` receiving HTTP 503 instead of 200; startup
+logged `model_unavailable` with `ValidationError`.
+
+The diagnosis was that the weather input lower bound had been changed from
+inclusive zero to exclusive zero. Zero is valid in the dataset and in the
+model's startup probe (`windspeed=0`), so artifact loading failed and readiness
+was lost. On the same PR branch, commit
+[`32ca1c4`](https://github.com/Jeromsan/mlops-fri1-vanta-bike-demand/commit/32ca1c48c84f074b684901decc774f027270e93e)
+restored the inclusive lower bound.
+
+Local verification passed: the model startup and inclusive-boundary tests
+passed (3 cases), the full suite passed (206 tests, 2 deprecation warnings),
+and Ruff checks passed. GitHub Actions [run #18](https://github.com/Jeromsan/mlops-fri1-vanta-bike-demand/actions/runs/43394585849)
+then passed the preflight, Ruff, full pytest suite, and Docker image build on
+the repaired PR commit.
+
+## Lab 6 — Cloud Run deployment status
+
+Cloud Run deployment and its live revision check have not yet been performed.
+The project ID, region, approved model bucket, deployment identity provider,
+and service-account configuration must be supplied by the team or instructor
+before configuring the keyless GitHub deployment. No deployment success is
+claimed until a revision is live and the Lab 5 identity smoke check passes.
