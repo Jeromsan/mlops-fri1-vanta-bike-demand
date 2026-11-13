@@ -1,0 +1,500 @@
+2026-11-13T08:23:23.2030250Z             else:
+2026-11-13T08:23:23.2030537Z                 (artifact_dir / "model.joblib").write_bytes(b"broken")
+2026-11-13T08:23:23.2030895Z                 metadata["model_sha256"] = sha256(artifact_dir / "model.joblib")
+2026-11-13T08:23:23.2031259Z             path.write_text(json.dumps(metadata))
+2026-11-13T08:23:23.2031583Z         with TestClient(create_app(artifact_dir)) as client:
+2026-11-13T08:23:23.2032000Z             assert client.get("/health").status_code == 503
+2026-11-13T08:23:23.2032403Z >           assert client.post("/predict", json=VALID).status_code == 503
+2026-11-13T08:23:23.2032940Z E           AssertionError: assert 422 == 503
+2026-11-13T08:23:23.2033271Z E            +  where 422 = <Response [422 Unprocessable Entity]>.status_code
+2026-11-13T08:23:23.2033779Z E            +    where <Response [422 Unprocessable Entity]> = post('/predict', json={'season': 1, 'yr': 0, 'mnth': 1, 'hr': 12, ...})
+2026-11-13T08:23:23.2034330Z E            +      where post = <starlette.testclient.TestClient object at 0x7f8da8a8f410>.post
+2026-11-13T08:23:23.2034619Z 
+2026-11-13T08:23:23.2034751Z tests/test_api.py:152: AssertionError
+2026-11-13T08:23:23.2035223Z ----------------------------- Captured stderr call -----------------------------
+2026-11-13T08:23:23.2035896Z {"timestamp": "2026-11-13T08:23:18.769956+00:00", "event": "model_unavailable", "reason": "IndexError", "action": "Check trusted model, metadata, checksum and feature contract; restart", "source_commit": "unknown"}
+2026-11-13T08:23:23.2037008Z {"timestamp": "2026-11-13T08:23:18.771123+00:00", "event": "request_completed", "request_id": "1b9f47f59f6d49d382c7073a9cae491f", "method": "GET", "route": "/health", "status": 503, "duration_ms": 0.698, "model_version": null, "model_sha256": null, "source_commit": "unknown"}
+2026-11-13T08:23:23.2038139Z {"timestamp": "2026-11-13T08:23:18.772131+00:00", "event": "request_completed", "request_id": "e8ac16c4f5cb4a0c829fa301ed793335", "method": "POST", "route": "/predict", "status": 422, "duration_ms": 0.417, "model_version": null, "model_sha256": null, "source_commit": "unknown"}
+2026-11-13T08:23:23.2038944Z ------------------------------ Captured log call -------------------------------
+2026-11-13T08:23:23.2039670Z INFO     bike_demand.events:api.py:37 {"timestamp": "2026-11-13T08:23:18.769956+00:00", "event": "model_unavailable", "reason": "IndexError", "action": "Check trusted model, metadata, checksum and feature contract; restart", "source_commit": "unknown"}
+2026-11-13T08:23:23.2040871Z INFO     bike_demand.events:api.py:37 {"timestamp": "2026-11-13T08:23:18.771123+00:00", "event": "request_completed", "request_id": "1b9f47f59f6d49d382c7073a9cae491f", "method": "GET", "route": "/health", "status": 503, "duration_ms": 0.698, "model_version": null, "model_sha256": null, "source_commit": "unknown"}
+2026-11-13T08:23:23.2042164Z INFO     bike_demand.events:api.py:37 {"timestamp": "2026-11-13T08:23:18.772131+00:00", "event": "request_completed", "request_id": "e8ac16c4f5cb4a0c829fa301ed793335", "method": "POST", "route": "/predict", "status": 422, "duration_ms": 0.417, "model_version": null, "model_sha256": null, "source_commit": "unknown"}
+2026-11-13T08:23:23.2043011Z _____________ test_inference_failure_clears_shared_readiness[nan] ______________
+2026-11-13T08:23:23.2043266Z 
+2026-11-13T08:23:23.2043495Z artifact_dir = PosixPath('/tmp/pytest-of-runner/pytest-0/test_inference_failure_clears_0')
+2026-11-13T08:23:23.2043975Z monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f8da89a8e90>
+2026-11-13T08:23:23.2044331Z output = nan
+2026-11-13T08:23:23.2044478Z 
+2026-11-13T08:23:23.2044677Z     @pytest.mark.parametrize("output", [float("nan"), float("inf"), -1, [1, 2]])
+2026-11-13T08:23:23.2045281Z     def test_inference_failure_clears_shared_readiness(artifact_dir, monkeypatch, output):
+2026-11-13T08:23:23.2045655Z         app = create_app(artifact_dir)
+2026-11-13T08:23:23.2045910Z         with TestClient(app) as client:
+2026-11-13T08:23:23.2046245Z             monkeypatch.setattr(
+2026-11-13T08:23:23.2046559Z >               app.state.loaded_model.model, "predict", lambda frame: [output]
+2026-11-13T08:23:23.2046899Z                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-11-13T08:23:23.2047144Z             )
+2026-11-13T08:23:23.2047438Z E           AttributeError: 'NoneType' object has no attribute 'model'
+2026-11-13T08:23:23.2047652Z 
+2026-11-13T08:23:23.2047795Z tests/test_api.py:160: AttributeError
+2026-11-13T08:23:23.2048116Z ----------------------------- Captured stderr call -----------------------------
+2026-11-13T08:23:23.2048850Z {"timestamp": "2026-11-13T08:23:18.778819+00:00", "event": "model_unavailable", "reason": "ValidationError", "action": "Check trusted model, metadata, checksum and feature contract; restart", "source_commit": "unknown"}
+2026-11-13T08:23:23.2049561Z ------------------------------ Captured log call -------------------------------
+2026-11-13T08:23:23.2050304Z INFO     bike_demand.events:api.py:37 {"timestamp": "2026-11-13T08:23:18.778819+00:00", "event": "model_unavailable", "reason": "ValidationError", "action": "Check trusted model, metadata, checksum and feature contract; restart", "source_commit": "unknown"}
+2026-11-13T08:23:23.2051127Z _____________ test_inference_failure_clears_shared_readiness[inf] ______________
+2026-11-13T08:23:23.2051350Z 
+2026-11-13T08:23:23.2051573Z artifact_dir = PosixPath('/tmp/pytest-of-runner/pytest-0/test_inference_failure_clears_1')
+2026-11-13T08:23:23.2052066Z monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f8da89f6a20>
+2026-11-13T08:23:23.2052466Z output = inf
+2026-11-13T08:23:23.2052600Z 
+2026-11-13T08:23:23.2052848Z     @pytest.mark.parametrize("output", [float("nan"), float("inf"), -1, [1, 2]])
+2026-11-13T08:23:23.2053313Z     def test_inference_failure_clears_shared_readiness(artifact_dir, monkeypatch, output):
+2026-11-13T08:23:23.2053689Z         app = create_app(artifact_dir)
+2026-11-13T08:23:23.2054037Z         with TestClient(app) as client:
+2026-11-13T08:23:23.2054325Z             monkeypatch.setattr(
+2026-11-13T08:23:23.2054693Z >               app.state.loaded_model.model, "predict", lambda frame: [output]
+2026-11-13T08:23:23.2055194Z                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-11-13T08:23:23.2055510Z             )
+2026-11-13T08:23:23.2055815Z E           AttributeError: 'NoneType' object has no attribute 'model'
+2026-11-13T08:23:23.2056056Z 
+2026-11-13T08:23:23.2056167Z tests/test_api.py:160: AttributeError
+2026-11-13T08:23:23.2056537Z ----------------------------- Captured stderr call -----------------------------
+2026-11-13T08:23:23.2057246Z {"timestamp": "2026-11-13T08:23:18.785015+00:00", "event": "model_unavailable", "reason": "ValidationError", "action": "Check trusted model, metadata, checksum and feature contract; restart", "source_commit": "unknown"}
+2026-11-13T08:23:23.2057908Z ------------------------------ Captured log call -------------------------------
+2026-11-13T08:23:23.2058670Z INFO     bike_demand.events:api.py:37 {"timestamp": "2026-11-13T08:23:18.785015+00:00", "event": "model_unavailable", "reason": "ValidationError", "action": "Check trusted model, metadata, checksum and feature contract; restart", "source_commit": "unknown"}
+2026-11-13T08:23:23.2059476Z ______________ test_inference_failure_clears_shared_readiness[-1] ______________
+2026-11-13T08:23:23.2059721Z 
+2026-11-13T08:23:23.2059953Z artifact_dir = PosixPath('/tmp/pytest-of-runner/pytest-0/test_inference_failure_clears_2')
+2026-11-13T08:23:23.2060444Z monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f8da8810f20>
+2026-11-13T08:23:23.2060817Z output = -1
+2026-11-13T08:23:23.2060922Z 
+2026-11-13T08:23:23.2061117Z     @pytest.mark.parametrize("output", [float("nan"), float("inf"), -1, [1, 2]])
+2026-11-13T08:23:23.2061553Z     def test_inference_failure_clears_shared_readiness(artifact_dir, monkeypatch, output):
+2026-11-13T08:23:23.2061967Z         app = create_app(artifact_dir)
+2026-11-13T08:23:23.2062230Z         with TestClient(app) as client:
+2026-11-13T08:23:23.2062503Z             monkeypatch.setattr(
+2026-11-13T08:23:23.2062815Z >               app.state.loaded_model.model, "predict", lambda frame: [output]
+2026-11-13T08:23:23.2063176Z                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-11-13T08:23:23.2063428Z             )
+2026-11-13T08:23:23.2063690Z E           AttributeError: 'NoneType' object has no attribute 'model'
+2026-11-13T08:23:23.2063911Z 
+2026-11-13T08:23:23.2064021Z tests/test_api.py:160: AttributeError
+2026-11-13T08:23:23.2064379Z ----------------------------- Captured stderr call -----------------------------
+2026-11-13T08:23:23.2065162Z {"timestamp": "2026-11-13T08:23:18.791532+00:00", "event": "model_unavailable", "reason": "ValidationError", "action": "Check trusted model, metadata, checksum and feature contract; restart", "source_commit": "unknown"}
+2026-11-13T08:23:23.2065829Z ------------------------------ Captured log call -------------------------------
+2026-11-13T08:23:23.2066569Z INFO     bike_demand.events:api.py:37 {"timestamp": "2026-11-13T08:23:18.791532+00:00", "event": "model_unavailable", "reason": "ValidationError", "action": "Check trusted model, metadata, checksum and feature contract; restart", "source_commit": "unknown"}
+2026-11-13T08:23:23.2067321Z ___________ test_inference_failure_clears_shared_readiness[output3] ____________
+2026-11-13T08:23:23.2067581Z 
+2026-11-13T08:23:23.2067781Z artifact_dir = PosixPath('/tmp/pytest-of-runner/pytest-0/test_inference_failure_clears_3')
+2026-11-13T08:23:23.2068262Z monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f8da8813cb0>
+2026-11-13T08:23:23.2068589Z output = [1, 2]
+2026-11-13T08:23:23.2068775Z 
+2026-11-13T08:23:23.2068932Z     @pytest.mark.parametrize("output", [float("nan"), float("inf"), -1, [1, 2]])
+2026-11-13T08:23:23.2069390Z     def test_inference_failure_clears_shared_readiness(artifact_dir, monkeypatch, output):
+2026-11-13T08:23:23.2069871Z         app = create_app(artifact_dir)
+2026-11-13T08:23:23.2070160Z         with TestClient(app) as client:
+2026-11-13T08:23:23.2070446Z             monkeypatch.setattr(
+2026-11-13T08:23:23.2070810Z >               app.state.loaded_model.model, "predict", lambda frame: [output]
+2026-11-13T08:23:23.2071176Z                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-11-13T08:23:23.2071442Z             )
+2026-11-13T08:23:23.2071734Z E           AttributeError: 'NoneType' object has no attribute 'model'
+2026-11-13T08:23:23.2072046Z 
+2026-11-13T08:23:23.2072200Z tests/test_api.py:160: AttributeError
+2026-11-13T08:23:23.2072544Z ----------------------------- Captured stderr call -----------------------------
+2026-11-13T08:23:23.2073275Z {"timestamp": "2026-11-13T08:23:18.797828+00:00", "event": "model_unavailable", "reason": "ValidationError", "action": "Check trusted model, metadata, checksum and feature contract; restart", "source_commit": "unknown"}
+2026-11-13T08:23:23.2073975Z ------------------------------ Captured log call -------------------------------
+2026-11-13T08:23:23.2074768Z INFO     bike_demand.events:api.py:37 {"timestamp": "2026-11-13T08:23:18.797828+00:00", "event": "model_unavailable", "reason": "ValidationError", "action": "Check trusted model, metadata, checksum and feature contract; restart", "source_commit": "unknown"}
+2026-11-13T08:23:23.2075667Z ____________________ test_lifespan_reloads_into_fresh_state ____________________
+2026-11-13T08:23:23.2075906Z 
+2026-11-13T08:23:23.2076191Z artifact_dir = PosixPath('/tmp/pytest-of-runner/pytest-0/test_lifespan_reloads_into_fre0')
+2026-11-13T08:23:23.2076511Z 
+2026-11-13T08:23:23.2076684Z     def test_lifespan_reloads_into_fresh_state(artifact_dir):
+2026-11-13T08:23:23.2076997Z         app = create_app(artifact_dir)
+2026-11-13T08:23:23.2077310Z         with TestClient(app) as client:
+2026-11-13T08:23:23.2077659Z >           assert client.get("/health").status_code == 200
+2026-11-13T08:23:23.2078008Z E           AssertionError: assert 503 == 200
+2026-11-13T08:23:23.2078351Z E            +  where 503 = <Response [503 Service Unavailable]>.status_code
+2026-11-13T08:23:23.2078768Z E            +    where <Response [503 Service Unavailable]> = get('/health')
+2026-11-13T08:23:23.2079208Z E            +      where get = <starlette.testclient.TestClient object at 0x7f8da8832270>.get
+2026-11-13T08:23:23.2079458Z 
+2026-11-13T08:23:23.2079598Z tests/test_api.py:169: AssertionError
+2026-11-13T08:23:23.2079999Z ----------------------------- Captured stderr call -----------------------------
+2026-11-13T08:23:23.2080700Z {"timestamp": "2026-11-13T08:23:18.804008+00:00", "event": "model_unavailable", "reason": "ValidationError", "action": "Check trusted model, metadata, checksum and feature contract; restart", "source_commit": "unknown"}
+2026-11-13T08:23:23.2081732Z {"timestamp": "2026-11-13T08:23:18.805264+00:00", "event": "request_completed", "request_id": "294c4db0a71e457b81842f5c6bea3027", "method": "GET", "route": "/health", "status": 503, "duration_ms": 0.727, "model_version": null, "model_sha256": null, "source_commit": "unknown"}
+2026-11-13T08:23:23.2082487Z ------------------------------ Captured log call -------------------------------
+2026-11-13T08:23:23.2083247Z INFO     bike_demand.events:api.py:37 {"timestamp": "2026-11-13T08:23:18.804008+00:00", "event": "model_unavailable", "reason": "ValidationError", "action": "Check trusted model, metadata, checksum and feature contract; restart", "source_commit": "unknown"}
+2026-11-13T08:23:23.2084470Z INFO     bike_demand.events:api.py:37 {"timestamp": "2026-11-13T08:23:18.805264+00:00", "event": "request_completed", "request_id": "294c4db0a71e457b81842f5c6bea3027", "method": "GET", "route": "/health", "status": 503, "duration_ms": 0.727, "model_version": null, "model_sha256": null, "source_commit": "unknown"}
+2026-11-13T08:23:23.2085477Z ________________ test_health_identity_is_bound_to_loaded_bytes _________________
+2026-11-13T08:23:23.2085680Z 
+2026-11-13T08:23:23.2085936Z artifact_dir = PosixPath('/tmp/pytest-of-runner/pytest-0/test_health_identity_is_bound_0')
+2026-11-13T08:23:23.2086386Z monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f8da8896690>
+2026-11-13T08:23:23.2086652Z 
+2026-11-13T08:23:23.2086853Z     def test_health_identity_is_bound_to_loaded_bytes(artifact_dir, monkeypatch):
+2026-11-13T08:23:23.2087235Z         monkeypatch.setenv("SOURCE_COMMIT", "test-source")
+2026-11-13T08:23:23.2087552Z         digest = sha256(artifact_dir / "model.joblib")
+2026-11-13T08:23:23.2087876Z         with TestClient(create_app(artifact_dir)) as client:
+2026-11-13T08:23:23.2088289Z             (artifact_dir / "model.joblib").write_bytes(b"changed after startup")
+2026-11-13T08:23:23.2088639Z >           assert client.get("/health").json() == {
+2026-11-13T08:23:23.2088928Z                 "status": "ok",
+2026-11-13T08:23:23.2089211Z                 "model_version": "synthetic-serving-fixture",
+2026-11-13T08:23:23.2089536Z                 "model_sha256": digest,
+2026-11-13T08:23:23.2089820Z                 "source_commit": "test-source",
+2026-11-13T08:23:23.2090080Z             }
+2026-11-13T08:23:23.2090495Z E           AssertionError: assert {'detail': 'M... unavailable'} == {'status': 'o...'test-source'}
+2026-11-13T08:23:23.2090856Z E             
+2026-11-13T08:23:23.2091119Z E             Left contains 1 more item:
+2026-11-13T08:23:23.2091423Z E             {'detail': 'Model unavailable'}
+2026-11-13T08:23:23.2091758Z E             Right contains 4 more items:
+2026-11-13T08:23:23.2092158Z E             {'model_sha256': '271cfe7de6fbcec61ec808ef058acc4da70dd003c70188a99a450b2d97887dd7',
+2026-11-13T08:23:23.2092635Z E              'model_version': 'synthetic-serving-fixture',
+2026-11-13T08:23:23.2093001Z E              'source_commit': 'test-source',
+2026-11-13T08:23:23.2093326Z E              'status': 'ok'}
+2026-11-13T08:23:23.2093611Z E             
+2026-11-13T08:23:23.2093839Z E             Full diff:
+2026-11-13T08:23:23.2094064Z E               {
+2026-11-13T08:23:23.2094390Z E             +     'detail': 'Model unavailable',
+2026-11-13T08:23:23.2094680Z E             -     'status': 'ok',
+2026-11-13T08:23:23.2302356Z E             -     'model_version': 'synthetic-serving-fixture',
+2026-11-13T08:23:23.2303064Z E             -     'model_sha256': '271cfe7de6fbcec61ec808ef058acc4da70dd003c70188a99a450b2d97887dd7',
+2026-11-13T08:23:23.2303426Z E             -     'source_commit': 'test-source',
+2026-11-13T08:23:23.2303640Z E               }
+2026-11-13T08:23:23.2303743Z 
+2026-11-13T08:23:23.2303832Z tests/test_api.py:180: AssertionError
+2026-11-13T08:23:23.2304115Z ----------------------------- Captured stderr call -----------------------------
+2026-11-13T08:23:23.2304872Z {"timestamp": "2026-11-13T08:23:18.811612+00:00", "event": "model_unavailable", "reason": "ValidationError", "action": "Check trusted model, metadata, checksum and feature contract; restart", "source_commit": "test-source"}
+2026-11-13T08:23:23.2306196Z {"timestamp": "2026-11-13T08:23:18.813622+00:00", "event": "request_completed", "request_id": "ade5d95b40604280b4385331e2051f14", "method": "GET", "route": "/health", "status": 503, "duration_ms": 1.305, "model_version": null, "model_sha256": null, "source_commit": "test-source"}
+2026-11-13T08:23:23.2306919Z ------------------------------ Captured log call -------------------------------
+2026-11-13T08:23:23.2307635Z INFO     bike_demand.events:api.py:37 {"timestamp": "2026-11-13T08:23:18.811612+00:00", "event": "model_unavailable", "reason": "ValidationError", "action": "Check trusted model, metadata, checksum and feature contract; restart", "source_commit": "test-source"}
+2026-11-13T08:23:23.2308944Z INFO     bike_demand.events:api.py:37 {"timestamp": "2026-11-13T08:23:18.813622+00:00", "event": "request_completed", "request_id": "ade5d95b40604280b4385331e2051f14", "method": "GET", "route": "/health", "status": 503, "duration_ms": 1.305, "model_version": null, "model_sha256": null, "source_commit": "test-source"}
+2026-11-13T08:23:23.2309723Z _______________ test_one_private_json_event_per_request[ok-200] ________________
+2026-11-13T08:23:23.2309924Z 
+2026-11-13T08:23:23.2310119Z artifact_dir = PosixPath('/tmp/pytest-of-runner/pytest-0/test_one_private_json_event_pe0')
+2026-11-13T08:23:23.2310438Z case = 'ok', expected = 200
+2026-11-13T08:23:23.2310556Z 
+2026-11-13T08:23:23.2310637Z     @pytest.mark.parametrize(
+2026-11-13T08:23:23.2310830Z         "case,expected",
+2026-11-13T08:23:23.2311002Z         [
+2026-11-13T08:23:23.2311147Z             ("ok", 200),
+2026-11-13T08:23:23.2311310Z             ("invalid", 422),
+2026-11-13T08:23:23.2311488Z             ("unavailable", 503),
+2026-11-13T08:23:23.2311684Z             ("unexpected", 500),
+2026-11-13T08:23:23.2311861Z             ("unknown", 404),
+2026-11-13T08:23:23.2312101Z         ],
+2026-11-13T08:23:23.2312246Z     )
+2026-11-13T08:23:23.2312490Z     def test_one_private_json_event_per_request(artifact_dir, case, expected):
+2026-11-13T08:23:23.2312766Z         import logging
+2026-11-13T08:23:23.2312932Z     
+2026-11-13T08:23:23.2313096Z         from bike_demand.api import EVENTS
+2026-11-13T08:23:23.2313298Z     
+2026-11-13T08:23:23.2313445Z         lines = []
+2026-11-13T08:23:23.2313592Z     
+2026-11-13T08:23:23.2313740Z         class Collector(logging.Handler):
+2026-11-13T08:23:23.2313948Z             def emit(self, record):
+2026-11-13T08:23:23.2314176Z                 lines.append(record.getMessage())
+2026-11-13T08:23:23.2314382Z     
+2026-11-13T08:23:23.2314532Z         handler = Collector()
+2026-11-13T08:23:23.2314722Z         EVENTS.addHandler(handler)
+2026-11-13T08:23:23.2315067Z         try:
+2026-11-13T08:23:23.2315373Z             app = create_app(artifact_dir)
+2026-11-13T08:23:23.2315581Z     
+2026-11-13T08:23:23.2315727Z             @app.get("/crash")
+2026-11-13T08:23:23.2315905Z             def crash():
+2026-11-13T08:23:23.2316125Z                 raise RuntimeError("private-error-content")
+2026-11-13T08:23:23.2316343Z     
+2026-11-13T08:23:23.2316493Z             with TestClient(app) as client:
+2026-11-13T08:23:23.2316700Z                 if case == "unavailable":
+2026-11-13T08:23:23.2316925Z                     app.state.loaded_model = None
+2026-11-13T08:23:23.2317134Z                 lines.clear()
+2026-11-13T08:23:23.2317315Z                 if case == "unexpected":
+2026-11-13T08:23:23.2317524Z                     response = client.get("/crash")
+2026-11-13T08:23:23.2317742Z                 elif case == "unknown":
+2026-11-13T08:23:23.2318024Z                     response = client.get("/private-path?secret=private-query")
+2026-11-13T08:23:23.2318270Z                 else:
+2026-11-13T08:23:23.2318438Z                     response = client.post(
+2026-11-13T08:23:23.2318668Z                         "/predict?secret=private-query",
+2026-11-13T08:23:23.2318920Z                         json={} if case == "invalid" else VALID,
+2026-11-13T08:23:23.2319712Z                         headers={"Authorization": "***"},
+2026-11-13T08:23:23.2319932Z                     )
+2026-11-13T08:23:23.2320118Z >               assert response.status_code == expected
+2026-11-13T08:23:23.2320336Z E               assert 422 == 200
+2026-11-13T08:23:23.2320581Z E                +  where 422 = <Response [422 Unprocessable Entity]>.status_code
+2026-11-13T08:23:23.2320777Z 
+2026-11-13T08:23:23.2320864Z tests/test_api.py:232: AssertionError
+2026-11-13T08:23:23.2321125Z ----------------------------- Captured stderr call -----------------------------
+2026-11-13T08:23:23.2321738Z {"timestamp": "2026-11-13T08:23:18.820742+00:00", "event": "model_unavailable", "reason": "ValidationError", "action": "Check trusted model, metadata, checksum and feature contract; restart", "source_commit": "unknown"}
+2026-11-13T08:23:23.2322761Z {"timestamp": "2026-11-13T08:23:18.822002+00:00", "event": "request_completed", "request_id": "fac89710037c4c649a5875487137ea7d", "method": "POST", "route": "/predict", "status": 422, "duration_ms": 0.536, "model_version": null, "model_sha256": null, "source_commit": "unknown"}
+2026-11-13T08:23:23.2323449Z ------------------------------ Captured log call -------------------------------
+2026-11-13T08:23:23.2324162Z INFO     bike_demand.events:api.py:37 {"timestamp": "2026-11-13T08:23:18.820742+00:00", "event": "model_unavailable", "reason": "ValidationError", "action": "Check trusted model, metadata, checksum and feature contract; restart", "source_commit": "unknown"}
+2026-11-13T08:23:23.2325432Z INFO     bike_demand.events:api.py:37 {"timestamp": "2026-11-13T08:23:18.822002+00:00", "event": "request_completed", "request_id": "fac89710037c4c649a5875487137ea7d", "method": "POST", "route": "/predict", "status": 422, "duration_ms": 0.536, "model_version": null, "model_sha256": null, "source_commit": "unknown"}
+2026-11-13T08:23:23.2326207Z ___________ test_one_private_json_event_per_request[unavailable-503] ___________
+2026-11-13T08:23:23.2326413Z 
+2026-11-13T08:23:23.2326599Z artifact_dir = PosixPath('/tmp/pytest-of-runner/pytest-0/test_one_private_json_event_pe2')
+2026-11-13T08:23:23.2326923Z case = 'unavailable', expected = 503
+2026-11-13T08:23:23.2327050Z 
+2026-11-13T08:23:23.2327136Z     @pytest.mark.parametrize(
+2026-11-13T08:23:23.2327327Z         "case,expected",
+2026-11-13T08:23:23.2327493Z         [
+2026-11-13T08:23:23.2327650Z             ("ok", 200),
+2026-11-13T08:23:23.2327818Z             ("invalid", 422),
+2026-11-13T08:23:23.2327999Z             ("unavailable", 503),
+2026-11-13T08:23:23.2328187Z             ("unexpected", 500),
+2026-11-13T08:23:23.2328371Z             ("unknown", 404),
+2026-11-13T08:23:23.2328533Z         ],
+2026-11-13T08:23:23.2328669Z     )
+2026-11-13T08:23:23.2328892Z     def test_one_private_json_event_per_request(artifact_dir, case, expected):
+2026-11-13T08:23:23.2329216Z         import logging
+2026-11-13T08:23:23.2329383Z     
+2026-11-13T08:23:23.2329542Z         from bike_demand.api import EVENTS
+2026-11-13T08:23:23.2329733Z     
+2026-11-13T08:23:23.2329868Z         lines = []
+2026-11-13T08:23:23.2330021Z     
+2026-11-13T08:23:23.2330173Z         class Collector(logging.Handler):
+2026-11-13T08:23:23.2330374Z             def emit(self, record):
+2026-11-13T08:23:23.2330584Z                 lines.append(record.getMessage())
+2026-11-13T08:23:23.2330796Z     
+2026-11-13T08:23:23.2330937Z         handler = Collector()
+2026-11-13T08:23:23.2331122Z         EVENTS.addHandler(handler)
+2026-11-13T08:23:23.2331300Z         try:
+2026-11-13T08:23:23.2331461Z             app = create_app(artifact_dir)
+2026-11-13T08:23:23.2331651Z     
+2026-11-13T08:23:23.2331791Z             @app.get("/crash")
+2026-11-13T08:23:23.2331966Z             def crash():
+2026-11-13T08:23:23.2332164Z                 raise RuntimeError("private-error-content")
+2026-11-13T08:23:23.2332385Z     
+2026-11-13T08:23:23.2332530Z             with TestClient(app) as client:
+2026-11-13T08:23:23.2332736Z                 if case == "unavailable":
+2026-11-13T08:23:23.2332945Z                     app.state.loaded_model = None
+2026-11-13T08:23:23.2333154Z                 lines.clear()
+2026-11-13T08:23:23.2333336Z                 if case == "unexpected":
+2026-11-13T08:23:23.2333544Z                     response = client.get("/crash")
+2026-11-13T08:23:23.2333754Z                 elif case == "unknown":
+2026-11-13T08:23:23.2334018Z                     response = client.get("/private-path?secret=private-query")
+2026-11-13T08:23:23.2334269Z                 else:
+2026-11-13T08:23:23.2334442Z                     response = client.post(
+2026-11-13T08:23:23.2334662Z                         "/predict?secret=private-query",
+2026-11-13T08:23:23.2335038Z                         json={} if case == "invalid" else VALID,
+2026-11-13T08:23:23.2335430Z                         headers={"Authorization": "***"},
+2026-11-13T08:23:23.2335645Z                     )
+2026-11-13T08:23:23.2335837Z >               assert response.status_code == expected
+2026-11-13T08:23:23.2336109Z E               assert 422 == 503
+2026-11-13T08:23:23.2336354Z E                +  where 422 = <Response [422 Unprocessable Entity]>.status_code
+2026-11-13T08:23:23.2336541Z 
+2026-11-13T08:23:23.2336619Z tests/test_api.py:232: AssertionError
+2026-11-13T08:23:23.2336881Z ----------------------------- Captured stderr call -----------------------------
+2026-11-13T08:23:23.2337481Z {"timestamp": "2026-11-13T08:23:18.833590+00:00", "event": "model_unavailable", "reason": "ValidationError", "action": "Check trusted model, metadata, checksum and feature contract; restart", "source_commit": "unknown"}
+2026-11-13T08:23:23.2338440Z {"timestamp": "2026-11-13T08:23:18.834843+00:00", "event": "request_completed", "request_id": "5e5c7095c45c402284de6eb5331a1e8a", "method": "POST", "route": "/predict", "status": 422, "duration_ms": 0.49, "model_version": null, "model_sha256": null, "source_commit": "unknown"}
+2026-11-13T08:23:23.2339135Z ------------------------------ Captured log call -------------------------------
+2026-11-13T08:23:23.2339791Z INFO     bike_demand.events:api.py:37 {"timestamp": "2026-11-13T08:23:18.833590+00:00", "event": "model_unavailable", "reason": "ValidationError", "action": "Check trusted model, metadata, checksum and feature contract; restart", "source_commit": "unknown"}
+2026-11-13T08:23:23.2340874Z INFO     bike_demand.events:api.py:37 {"timestamp": "2026-11-13T08:23:18.834843+00:00", "event": "request_completed", "request_id": "5e5c7095c45c402284de6eb5331a1e8a", "method": "POST", "route": "/predict", "status": 422, "duration_ms": 0.49, "model_version": null, "model_sha256": null, "source_commit": "unknown"}
+2026-11-13T08:23:23.2341599Z =============================== warnings summary ===============================
+2026-11-13T08:23:23.2341884Z .venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+2026-11-13T08:23:23.2342675Z   /home/runner/work/mlops-fri1-vanta-bike-demand/mlops-fri1-vanta-bike-demand/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+2026-11-13T08:23:23.2343421Z     from starlette.testclient import TestClient as TestClient  # noqa
+2026-11-13T08:23:23.2343610Z 
+2026-11-13T08:23:23.2343811Z tests/exercise/test_baseline.py::test_saved_model_readback_rerun_and_held_test
+2026-11-13T08:23:23.2344816Z   /home/runner/work/mlops-fri1-vanta-bike-demand/mlops-fri1-vanta-bike-demand/.venv/lib/python3.12/site-packages/mlflow/store/tracking/sqlalchemy_store.py:327: SADeprecationWarning: The ``noload`` loader strategy is deprecated and will be removed in a future release.  This option produces incorrect results by returning ``None`` for related items. (deprecated since: 2.1)
+2026-11-13T08:23:23.2345880Z     sqlalchemy.orm.configure_mappers()
+2026-11-13T08:23:23.2346018Z 
+2026-11-13T08:23:23.2346176Z -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+2026-11-13T08:23:23.2346483Z =========================== short test summary info ============================
+2026-11-13T08:23:23.2346842Z FAILED tests/test_api.py::test_loaded_model_and_shutdown - AssertionError: assert 503 == 200
+2026-11-13T08:23:23.2347190Z  +  where 503 = <Response [503 Service Unavailable]>.status_code
+2026-11-13T08:23:23.2347476Z  +    where <Response [503 Service Unavailable]> = get('/health')
+2026-11-13T08:23:23.2347794Z  +      where get = <starlette.testclient.TestClient object at 0x7f8da911aa80>.get
+2026-11-13T08:23:23.2348161Z FAILED tests/test_api.py::test_absent_model - AssertionError: assert 422 == 503
+2026-11-13T08:23:23.2348476Z  +  where 422 = <Response [422 Unprocessable Entity]>.status_code
+2026-11-13T08:23:23.2348866Z  +    where <Response [422 Unprocessable Entity]> = post('/predict', json={'season': 1, 'yr': 0, 'mnth': 1, 'hr': 12, ...})
+2026-11-13T08:23:23.2349302Z  +      where post = <starlette.testclient.TestClient object at 0x7f8da8ec74a0>.post
+2026-11-13T08:23:23.2349861Z FAILED tests/test_api.py::test_invalid_input_never_runs_inference[payload0] - AttributeError: 'NoneType' object has no attribute 'model'
+2026-11-13T08:23:23.2350451Z FAILED tests/test_api.py::test_invalid_input_never_runs_inference[payload1] - AttributeError: 'NoneType' object has no attribute 'model'
+2026-11-13T08:23:23.2351035Z FAILED tests/test_api.py::test_invalid_input_never_runs_inference[payload2] - AttributeError: 'NoneType' object has no attribute 'model'
+2026-11-13T08:23:23.2351673Z FAILED tests/test_api.py::test_invalid_input_never_runs_inference[payload3] - AttributeError: 'NoneType' object has no attribute 'model'
+2026-11-13T08:23:23.2352350Z FAILED tests/test_api.py::test_invalid_input_never_runs_inference[payload4] - AttributeError: 'NoneType' object has no attribute 'model'
+2026-11-13T08:23:23.2352973Z FAILED tests/test_api.py::test_invalid_input_never_runs_inference[payload5] - AttributeError: 'NoneType' object has no attribute 'model'
+2026-11-13T08:23:23.2353605Z FAILED tests/test_api.py::test_invalid_input_never_runs_inference[payload6] - AttributeError: 'NoneType' object has no attribute 'model'
+2026-11-13T08:23:23.2354210Z FAILED tests/test_api.py::test_invalid_input_never_runs_inference[payload7] - AttributeError: 'NoneType' object has no attribute 'model'
+2026-11-13T08:23:23.2354809Z FAILED tests/test_api.py::test_invalid_input_never_runs_inference[payload8] - AttributeError: 'NoneType' object has no attribute 'model'
+2026-11-13T08:23:23.2355588Z FAILED tests/test_api.py::test_invalid_input_never_runs_inference[payload9] - AttributeError: 'NoneType' object has no attribute 'model'
+2026-11-13T08:23:23.2356200Z FAILED tests/test_api.py::test_invalid_input_never_runs_inference[payload10] - AttributeError: 'NoneType' object has no attribute 'model'
+2026-11-13T08:23:23.2356806Z FAILED tests/test_api.py::test_invalid_input_never_runs_inference[payload11] - AttributeError: 'NoneType' object has no attribute 'model'
+2026-11-13T08:23:23.2357499Z FAILED tests/test_api.py::test_invalid_input_never_runs_inference[payload12] - AttributeError: 'NoneType' object has no attribute 'model'
+2026-11-13T08:23:23.2358112Z FAILED tests/test_api.py::test_invalid_input_never_runs_inference[payload13] - AttributeError: 'NoneType' object has no attribute 'model'
+2026-11-13T08:23:23.2358730Z FAILED tests/test_api.py::test_invalid_input_never_runs_inference[payload14] - AttributeError: 'NoneType' object has no attribute 'model'
+2026-11-13T08:23:23.2359350Z FAILED tests/test_api.py::test_invalid_input_never_runs_inference[payload15] - AttributeError: 'NoneType' object has no attribute 'model'
+2026-11-13T08:23:23.2359986Z FAILED tests/test_api.py::test_invalid_input_never_runs_inference[payload16] - AttributeError: 'NoneType' object has no attribute 'model'
+2026-11-13T08:23:23.2360612Z FAILED tests/test_api.py::test_invalid_input_never_runs_inference[payload17] - AttributeError: 'NoneType' object has no attribute 'model'
+2026-11-13T08:23:23.2361235Z FAILED tests/test_api.py::test_invalid_input_never_runs_inference[payload18] - AttributeError: 'NoneType' object has no attribute 'model'
+2026-11-13T08:23:23.2361522Z FAILED tests/test_api.py::test_invalid_input_never_runs_inference[payload19] - AttributeError: 'NoneType' object has no attribute 'model'
+2026-11-13T08:23:23.2361808Z FAILED tests/test_api.py::test_invalid_input_never_runs_inference[payload20] - AttributeError: 'NoneType' object has no attribute 'model'
+2026-11-13T08:23:23.2362075Z FAILED tests/test_api.py::test_invalid_input_never_runs_inference[payload21] - AttributeError: 'NoneType' object has no attribute 'model'
+2026-11-13T08:23:23.2362399Z FAILED tests/test_api.py::test_invalid_input_never_runs_inference[payload22] - AttributeError: 'NoneType' object has no attribute 'model'
+2026-11-13T08:23:23.2362665Z FAILED tests/test_api.py::test_invalid_input_never_runs_inference[payload23] - AttributeError: 'NoneType' object has no attribute 'model'
+2026-11-13T08:23:23.2362933Z FAILED tests/test_api.py::test_invalid_input_never_runs_inference[payload24] - AttributeError: 'NoneType' object has no attribute 'model'
+2026-11-13T08:23:23.2363236Z FAILED tests/test_api.py::test_invalid_input_never_runs_inference[payload25] - AttributeError: 'NoneType' object has no attribute 'model'
+2026-11-13T08:23:23.2363534Z FAILED tests/test_api.py::test_invalid_input_never_runs_inference[payload26] - AttributeError: 'NoneType' object has no attribute 'model'
+2026-11-13T08:23:23.2363799Z FAILED tests/test_api.py::test_invalid_input_never_runs_inference[payload27] - AttributeError: 'NoneType' object has no attribute 'model'
+2026-11-13T08:23:23.2364062Z FAILED tests/test_api.py::test_invalid_input_never_runs_inference[payload28] - AttributeError: 'NoneType' object has no attribute 'model'
+2026-11-13T08:23:23.2364329Z FAILED tests/test_api.py::test_invalid_input_never_runs_inference[payload29] - AttributeError: 'NoneType' object has no attribute 'model'
+2026-11-13T08:23:23.2364596Z FAILED tests/test_api.py::test_invalid_input_never_runs_inference[payload30] - AttributeError: 'NoneType' object has no attribute 'model'
+2026-11-13T08:23:23.2364865Z FAILED tests/test_api.py::test_invalid_input_never_runs_inference[payload31] - AttributeError: 'NoneType' object has no attribute 'model'
+2026-11-13T08:23:23.2365295Z FAILED tests/test_api.py::test_invalid_input_never_runs_inference[payload32] - AttributeError: 'NoneType' object has no attribute 'model'
+2026-11-13T08:23:23.2365573Z FAILED tests/test_api.py::test_invalid_input_never_runs_inference[payload33] - AttributeError: 'NoneType' object has no attribute 'model'
+2026-11-13T08:23:23.2365831Z FAILED tests/test_api.py::test_invalid_input_never_runs_inference[payload34] - AttributeError: 'NoneType' object has no attribute 'model'
+2026-11-13T08:23:23.2366097Z FAILED tests/test_api.py::test_invalid_input_never_runs_inference[payload35] - AttributeError: 'NoneType' object has no attribute 'model'
+2026-11-13T08:23:23.2366367Z FAILED tests/test_api.py::test_invalid_input_never_runs_inference[payload36] - AttributeError: 'NoneType' object has no attribute 'model'
+2026-11-13T08:23:23.2366684Z FAILED tests/test_api.py::test_invalid_input_never_runs_inference[payload37] - AttributeError: 'NoneType' object has no attribute 'model'
+2026-11-13T08:23:23.2366941Z FAILED tests/test_api.py::test_invalid_input_never_runs_inference[payload38] - AttributeError: 'NoneType' object has no attribute 'model'
+2026-11-13T08:23:23.2367200Z FAILED tests/test_api.py::test_invalid_input_never_runs_inference[payload39] - AttributeError: 'NoneType' object has no attribute 'model'
+2026-11-13T08:23:23.2367466Z FAILED tests/test_api.py::test_invalid_input_never_runs_inference[payload40] - AttributeError: 'NoneType' object has no attribute 'model'
+2026-11-13T08:23:23.2367720Z FAILED tests/test_api.py::test_invalid_input_never_runs_inference[payload41] - AttributeError: 'NoneType' object has no attribute 'model'
+2026-11-13T08:23:23.2367987Z FAILED tests/test_api.py::test_invalid_input_never_runs_inference[payload42] - AttributeError: 'NoneType' object has no attribute 'model'
+2026-11-13T08:23:23.2368254Z FAILED tests/test_api.py::test_invalid_input_never_runs_inference[payload43] - AttributeError: 'NoneType' object has no attribute 'model'
+2026-11-13T08:23:23.2368507Z FAILED tests/test_api.py::test_invalid_input_never_runs_inference[payload44] - AttributeError: 'NoneType' object has no attribute 'model'
+2026-11-13T08:23:23.2368771Z FAILED tests/test_api.py::test_invalid_input_never_runs_inference[payload45] - AttributeError: 'NoneType' object has no attribute 'model'
+2026-11-13T08:23:23.2369033Z FAILED tests/test_api.py::test_invalid_input_never_runs_inference[payload46] - AttributeError: 'NoneType' object has no attribute 'model'
+2026-11-13T08:23:23.2369291Z FAILED tests/test_api.py::test_invalid_input_never_runs_inference[payload47] - AttributeError: 'NoneType' object has no attribute 'model'
+2026-11-13T08:23:23.2369558Z FAILED tests/test_api.py::test_invalid_input_never_runs_inference[payload48] - AttributeError: 'NoneType' object has no attribute 'model'
+2026-11-13T08:23:23.2369867Z FAILED tests/test_api.py::test_invalid_input_never_runs_inference[payload49] - AttributeError: 'NoneType' object has no attribute 'model'
+2026-11-13T08:23:23.2370136Z FAILED tests/test_api.py::test_invalid_input_never_runs_inference[payload50] - AttributeError: 'NoneType' object has no attribute 'model'
+2026-11-13T08:23:23.2370401Z FAILED tests/test_api.py::test_invalid_input_never_runs_inference[payload51] - AttributeError: 'NoneType' object has no attribute 'model'
+2026-11-13T08:23:23.2370668Z FAILED tests/test_api.py::test_invalid_input_never_runs_inference[payload52] - AttributeError: 'NoneType' object has no attribute 'model'
+2026-11-13T08:23:23.2370935Z FAILED tests/test_api.py::test_invalid_input_never_runs_inference[payload53] - AttributeError: 'NoneType' object has no attribute 'model'
+2026-11-13T08:23:23.2371197Z FAILED tests/test_api.py::test_invalid_input_never_runs_inference[payload54] - AttributeError: 'NoneType' object has no attribute 'model'
+2026-11-13T08:23:23.2371523Z FAILED tests/test_api.py::test_invalid_input_never_runs_inference[payload55] - AttributeError: 'NoneType' object has no attribute 'model'
+2026-11-13T08:23:23.2371845Z FAILED tests/test_api.py::test_invalid_input_never_runs_inference[payload56] - AttributeError: 'NoneType' object has no attribute 'model'
+2026-11-13T08:23:23.2372126Z FAILED tests/test_api.py::test_invalid_input_never_runs_inference[payload57] - AttributeError: 'NoneType' object has no attribute 'model'
+2026-11-13T08:23:23.2372391Z FAILED tests/test_api.py::test_invalid_input_never_runs_inference[payload58] - AttributeError: 'NoneType' object has no attribute 'model'
+2026-11-13T08:23:23.2372710Z FAILED tests/test_api.py::test_invalid_input_never_runs_inference[payload59] - AttributeError: 'NoneType' object has no attribute 'model'
+2026-11-13T08:23:23.2372973Z FAILED tests/test_api.py::test_invalid_input_never_runs_inference[payload60] - AttributeError: 'NoneType' object has no attribute 'model'
+2026-11-13T08:23:23.2373290Z FAILED tests/test_api.py::test_invalid_input_never_runs_inference[payload61] - AttributeError: 'NoneType' object has no attribute 'model'
+2026-11-13T08:23:23.2373578Z FAILED tests/test_api.py::test_invalid_input_never_runs_inference[payload62] - AttributeError: 'NoneType' object has no attribute 'model'
+2026-11-13T08:23:23.2373849Z FAILED tests/test_api.py::test_invalid_input_never_runs_inference[payload63] - AttributeError: 'NoneType' object has no attribute 'model'
+2026-11-13T08:23:23.2374126Z FAILED tests/test_api.py::test_invalid_input_never_runs_inference[payload64] - AttributeError: 'NoneType' object has no attribute 'model'
+2026-11-13T08:23:23.2374415Z FAILED tests/test_api.py::test_invalid_input_never_runs_inference[payload65] - AttributeError: 'NoneType' object has no attribute 'model'
+2026-11-13T08:23:23.2374692Z FAILED tests/test_api.py::test_invalid_input_never_runs_inference[payload66] - AttributeError: 'NoneType' object has no attribute 'model'
+2026-11-13T08:23:23.2375102Z FAILED tests/test_api.py::test_invalid_input_never_runs_inference[payload67] - AttributeError: 'NoneType' object has no attribute 'model'
+2026-11-13T08:23:23.2375398Z FAILED tests/test_api.py::test_invalid_input_never_runs_inference[payload68] - AttributeError: 'NoneType' object has no attribute 'model'
+2026-11-13T08:23:23.2375674Z FAILED tests/test_api.py::test_invalid_input_never_runs_inference[payload69] - AttributeError: 'NoneType' object has no attribute 'model'
+2026-11-13T08:23:23.2375935Z FAILED tests/test_api.py::test_invalid_input_never_runs_inference[payload70] - AttributeError: 'NoneType' object has no attribute 'model'
+2026-11-13T08:23:23.2376208Z FAILED tests/test_api.py::test_invalid_input_never_runs_inference[payload71] - AttributeError: 'NoneType' object has no attribute 'model'
+2026-11-13T08:23:23.2376484Z FAILED tests/test_api.py::test_invalid_input_never_runs_inference[payload72] - AttributeError: 'NoneType' object has no attribute 'model'
+2026-11-13T08:23:23.2376745Z FAILED tests/test_api.py::test_invalid_input_never_runs_inference[payload73] - AttributeError: 'NoneType' object has no attribute 'model'
+2026-11-13T08:23:23.2377070Z FAILED tests/test_api.py::test_invalid_input_never_runs_inference[payload74] - AttributeError: 'NoneType' object has no attribute 'model'
+2026-11-13T08:23:23.2377345Z FAILED tests/test_api.py::test_invalid_input_never_runs_inference[payload75] - AttributeError: 'NoneType' object has no attribute 'model'
+2026-11-13T08:23:23.2377606Z FAILED tests/test_api.py::test_invalid_input_never_runs_inference[payload76] - AttributeError: 'NoneType' object has no attribute 'model'
+2026-11-13T08:23:23.2377877Z FAILED tests/test_api.py::test_invalid_input_never_runs_inference[payload77] - AttributeError: 'NoneType' object has no attribute 'model'
+2026-11-13T08:23:23.2378150Z FAILED tests/test_api.py::test_invalid_input_never_runs_inference[payload78] - AttributeError: 'NoneType' object has no attribute 'model'
+2026-11-13T08:23:23.2378408Z FAILED tests/test_api.py::test_invalid_input_never_runs_inference[payload79] - AttributeError: 'NoneType' object has no attribute 'model'
+2026-11-13T08:23:23.2378680Z FAILED tests/test_api.py::test_invalid_input_never_runs_inference[payload80] - AttributeError: 'NoneType' object has no attribute 'model'
+2026-11-13T08:23:23.2378953Z FAILED tests/test_api.py::test_invalid_input_never_runs_inference[payload81] - AttributeError: 'NoneType' object has no attribute 'model'
+2026-11-13T08:23:23.2379210Z FAILED tests/test_api.py::test_invalid_input_never_runs_inference[payload82] - AttributeError: 'NoneType' object has no attribute 'model'
+2026-11-13T08:23:23.2379479Z FAILED tests/test_api.py::test_invalid_input_never_runs_inference[payload83] - AttributeError: 'NoneType' object has no attribute 'model'
+2026-11-13T08:23:23.2379746Z FAILED tests/test_api.py::test_invalid_input_never_runs_inference[payload84] - AttributeError: 'NoneType' object has no attribute 'model'
+2026-11-13T08:23:23.2380016Z FAILED tests/test_api.py::test_invalid_input_never_runs_inference[payload85] - AttributeError: 'NoneType' object has no attribute 'model'
+2026-11-13T08:23:23.2380327Z FAILED tests/test_api.py::test_invalid_input_never_runs_inference[payload86] - AttributeError: 'NoneType' object has no attribute 'model'
+2026-11-13T08:23:23.2380600Z FAILED tests/test_api.py::test_invalid_input_never_runs_inference[payload87] - AttributeError: 'NoneType' object has no attribute 'model'
+2026-11-13T08:23:23.2380873Z FAILED tests/test_api.py::test_invalid_input_never_runs_inference[payload88] - AttributeError: 'NoneType' object has no attribute 'model'
+2026-11-13T08:23:23.2381138Z FAILED tests/test_api.py::test_invalid_input_never_runs_inference[payload89] - AttributeError: 'NoneType' object has no attribute 'model'
+2026-11-13T08:23:23.2381411Z FAILED tests/test_api.py::test_invalid_input_never_runs_inference[payload90] - AttributeError: 'NoneType' object has no attribute 'model'
+2026-11-13T08:23:23.2381687Z FAILED tests/test_api.py::test_invalid_input_never_runs_inference[payload91] - AttributeError: 'NoneType' object has no attribute 'model'
+2026-11-13T08:23:23.2381953Z FAILED tests/test_api.py::test_invalid_input_never_runs_inference[payload92] - AttributeError: 'NoneType' object has no attribute 'model'
+2026-11-13T08:23:23.2382227Z FAILED tests/test_api.py::test_invalid_input_never_runs_inference[payload93] - AttributeError: 'NoneType' object has no attribute 'model'
+2026-11-13T08:23:23.2382499Z FAILED tests/test_api.py::test_invalid_input_never_runs_inference[payload94] - AttributeError: 'NoneType' object has no attribute 'model'
+2026-11-13T08:23:23.2382760Z FAILED tests/test_api.py::test_invalid_input_never_runs_inference[payload95] - AttributeError: 'NoneType' object has no attribute 'model'
+2026-11-13T08:23:23.2383038Z FAILED tests/test_api.py::test_invalid_input_never_runs_inference[payload96] - AttributeError: 'NoneType' object has no attribute 'model'
+2026-11-13T08:23:23.2383304Z FAILED tests/test_api.py::test_invalid_input_never_runs_inference[payload97] - AttributeError: 'NoneType' object has no attribute 'model'
+2026-11-13T08:23:23.2383642Z FAILED tests/test_api.py::test_invalid_input_never_runs_inference[payload98] - AttributeError: 'NoneType' object has no attribute 'model'
+2026-11-13T08:23:23.2383905Z FAILED tests/test_api.py::test_invalid_input_never_runs_inference[payload99] - AttributeError: 'NoneType' object has no attribute 'model'
+2026-11-13T08:23:23.2384168Z FAILED tests/test_api.py::test_invalid_input_never_runs_inference[payload100] - AttributeError: 'NoneType' object has no attribute 'model'
+2026-11-13T08:23:23.2384422Z FAILED tests/test_api.py::test_invalid_input_never_runs_inference[payload101] - AttributeError: 'NoneType' object has no attribute 'model'
+2026-11-13T08:23:23.2384686Z FAILED tests/test_api.py::test_invalid_input_never_runs_inference[payload102] - AttributeError: 'NoneType' object has no attribute 'model'
+2026-11-13T08:23:23.2385046Z FAILED tests/test_api.py::test_invalid_input_never_runs_inference[payload103] - AttributeError: 'NoneType' object has no attribute 'model'
+2026-11-13T08:23:23.2385323Z FAILED tests/test_api.py::test_invalid_input_never_runs_inference[payload104] - AttributeError: 'NoneType' object has no attribute 'model'
+2026-11-13T08:23:23.2385579Z FAILED tests/test_api.py::test_invalid_input_never_runs_inference[payload105] - AttributeError: 'NoneType' object has no attribute 'model'
+2026-11-13T08:23:23.2385835Z FAILED tests/test_api.py::test_invalid_input_never_runs_inference[payload106] - AttributeError: 'NoneType' object has no attribute 'model'
+2026-11-13T08:23:23.2386103Z FAILED tests/test_api.py::test_invalid_input_never_runs_inference[payload107] - AttributeError: 'NoneType' object has no attribute 'model'
+2026-11-13T08:23:23.2386361Z FAILED tests/test_api.py::test_invalid_input_never_runs_inference[payload108] - AttributeError: 'NoneType' object has no attribute 'model'
+2026-11-13T08:23:23.2386623Z FAILED tests/test_api.py::test_invalid_input_never_runs_inference[payload109] - AttributeError: 'NoneType' object has no attribute 'model'
+2026-11-13T08:23:23.2386933Z FAILED tests/test_api.py::test_invalid_input_never_runs_inference[payload110] - AttributeError: 'NoneType' object has no attribute 'model'
+2026-11-13T08:23:23.2387194Z FAILED tests/test_api.py::test_invalid_input_never_runs_inference[payload111] - AttributeError: 'NoneType' object has no attribute 'model'
+2026-11-13T08:23:23.2387455Z FAILED tests/test_api.py::test_invalid_input_never_runs_inference[invalid] - AttributeError: 'NoneType' object has no attribute 'model'
+2026-11-13T08:23:23.2387708Z FAILED tests/test_api.py::test_invalid_input_never_runs_inference[None] - AttributeError: 'NoneType' object has no attribute 'model'
+2026-11-13T08:23:23.2387898Z FAILED tests/test_api.py::test_inclusive_weather_boundaries[0] - AssertionError: assert 422 == 200
+2026-11-13T08:23:23.2388023Z  +  where 422 = <Response [422 Unprocessable Entity]>.status_code
+2026-11-13T08:23:23.2388261Z  +    where <Response [422 Unprocessable Entity]> = post('/predict', json={'season': 1, 'yr': 0, 'mnth': 1, 'hr': 12, ...})
+2026-11-13T08:23:23.2388424Z  +      where post = <starlette.testclient.TestClient object at 0x7f8da89f5730>.post
+2026-11-13T08:23:23.2388619Z FAILED tests/test_api.py::test_inclusive_weather_boundaries[1] - AssertionError: assert 503 == 200
+2026-11-13T08:23:23.2388740Z  +  where 503 = <Response [503 Service Unavailable]>.status_code
+2026-11-13T08:23:23.2388955Z  +    where <Response [503 Service Unavailable]> = post('/predict', json={'season': 1, 'yr': 0, 'mnth': 1, 'hr': 12, ...})
+2026-11-13T08:23:23.2389115Z  +      where post = <starlette.testclient.TestClient object at 0x7f8da89aafc0>.post
+2026-11-13T08:23:23.2389316Z FAILED tests/test_api.py::test_unusable_artifact[missing-metadata] - AssertionError: assert 422 == 503
+2026-11-13T08:23:23.2389428Z  +  where 422 = <Response [422 Unprocessable Entity]>.status_code
+2026-11-13T08:23:23.2389651Z  +    where <Response [422 Unprocessable Entity]> = post('/predict', json={'season': 1, 'yr': 0, 'mnth': 1, 'hr': 12, ...})
+2026-11-13T08:23:23.3750536Z  +      where post = <starlette.testclient.TestClient object at 0x7f8da938a2a0>.post
+2026-11-13T08:23:23.3751584Z FAILED tests/test_api.py::test_unusable_artifact[bad-json] - AssertionError: assert 422 == 503
+2026-11-13T08:23:23.3751884Z  +  where 422 = <Response [422 Unprocessable Entity]>.status_code
+2026-11-13T08:23:23.3752574Z  +    where <Response [422 Unprocessable Entity]> = post('/predict', json={'season': 1, 'yr': 0, 'mnth': 1, 'hr': 12, ...})
+2026-11-13T08:23:23.3752961Z  +      where post = <starlette.testclient.TestClient object at 0x7f8da8a58170>.post
+2026-11-13T08:23:23.3753444Z FAILED tests/test_api.py::test_unusable_artifact[checksum] - AssertionError: assert 422 == 503
+2026-11-13T08:23:23.3753717Z  +  where 422 = <Response [422 Unprocessable Entity]>.status_code
+2026-11-13T08:23:23.3754286Z  +    where <Response [422 Unprocessable Entity]> = post('/predict', json={'season': 1, 'yr': 0, 'mnth': 1, 'hr': 12, ...})
+2026-11-13T08:23:23.3754667Z  +      where post = <starlette.testclient.TestClient object at 0x7f8da8827aa0>.post
+2026-11-13T08:23:23.3755408Z FAILED tests/test_api.py::test_unusable_artifact[features] - AssertionError: assert 422 == 503
+2026-11-13T08:23:23.3755694Z  +  where 422 = <Response [422 Unprocessable Entity]>.status_code
+2026-11-13T08:23:23.3756238Z  +    where <Response [422 Unprocessable Entity]> = post('/predict', json={'season': 1, 'yr': 0, 'mnth': 1, 'hr': 12, ...})
+2026-11-13T08:23:23.3756601Z  +      where post = <starlette.testclient.TestClient object at 0x7f8da882b5f0>.post
+2026-11-13T08:23:23.3757038Z FAILED tests/test_api.py::test_unusable_artifact[version] - AssertionError: assert 422 == 503
+2026-11-13T08:23:23.3757295Z  +  where 422 = <Response [422 Unprocessable Entity]>.status_code
+2026-11-13T08:23:23.3757839Z  +    where <Response [422 Unprocessable Entity]> = post('/predict', json={'season': 1, 'yr': 0, 'mnth': 1, 'hr': 12, ...})
+2026-11-13T08:23:23.3758194Z  +      where post = <starlette.testclient.TestClient object at 0x7f8da882a030>.post
+2026-11-13T08:23:23.3758959Z FAILED tests/test_api.py::test_unusable_artifact[corrupt-model] - AssertionError: assert 422 == 503
+2026-11-13T08:23:23.3759256Z  +  where 422 = <Response [422 Unprocessable Entity]>.status_code
+2026-11-13T08:23:23.3759795Z  +    where <Response [422 Unprocessable Entity]> = post('/predict', json={'season': 1, 'yr': 0, 'mnth': 1, 'hr': 12, ...})
+2026-11-13T08:23:23.3760183Z  +      where post = <starlette.testclient.TestClient object at 0x7f8da8a8f410>.post
+2026-11-13T08:23:23.3760918Z FAILED tests/test_api.py::test_inference_failure_clears_shared_readiness[nan] - AttributeError: 'NoneType' object has no attribute 'model'
+2026-11-13T08:23:23.3761637Z FAILED tests/test_api.py::test_inference_failure_clears_shared_readiness[inf] - AttributeError: 'NoneType' object has no attribute 'model'
+2026-11-13T08:23:23.3762360Z FAILED tests/test_api.py::test_inference_failure_clears_shared_readiness[-1] - AttributeError: 'NoneType' object has no attribute 'model'
+2026-11-13T08:23:23.3763117Z FAILED tests/test_api.py::test_inference_failure_clears_shared_readiness[output3] - AttributeError: 'NoneType' object has no attribute 'model'
+2026-11-13T08:23:23.3763630Z FAILED tests/test_api.py::test_lifespan_reloads_into_fresh_state - AssertionError: assert 503 == 200
+2026-11-13T08:23:23.3763883Z  +  where 503 = <Response [503 Service Unavailable]>.status_code
+2026-11-13T08:23:23.3764145Z  +    where <Response [503 Service Unavailable]> = get('/health')
+2026-11-13T08:23:23.3764537Z  +      where get = <starlette.testclient.TestClient object at 0x7f8da8832270>.get
+2026-11-13T08:23:23.3765582Z FAILED tests/test_api.py::test_health_identity_is_bound_to_loaded_bytes - AssertionError: assert {'detail': 'M... unavailable'} == {'status': 'o...'test-source'}
+2026-11-13T08:23:23.3765753Z   
+2026-11-13T08:23:23.3765943Z   Left contains 1 more item:
+2026-11-13T08:23:23.3766113Z   {'detail': 'Model unavailable'}
+2026-11-13T08:23:23.3766285Z   Right contains 4 more items:
+2026-11-13T08:23:23.3766702Z   {'model_sha256': '271cfe7de6fbcec61ec808ef058acc4da70dd003c70188a99a450b2d97887dd7',
+2026-11-13T08:23:23.3766941Z    'model_version': 'synthetic-serving-fixture',
+2026-11-13T08:23:23.3767321Z    'source_commit': 'test-source',
+2026-11-13T08:23:23.3767481Z    'status': 'ok'}
+2026-11-13T08:23:23.3767627Z   
+2026-11-13T08:23:23.3767776Z   Full diff:
+2026-11-13T08:23:23.3767911Z     {
+2026-11-13T08:23:23.3768093Z   +     'detail': 'Model unavailable',
+2026-11-13T08:23:23.3768252Z   -     'status': 'ok',
+2026-11-13T08:23:23.3768477Z   -     'model_version': 'synthetic-serving-fixture',
+2026-11-13T08:23:23.3768921Z   -     'model_sha256': '271cfe7de6fbcec61ec808ef058acc4da70dd003c70188a99a450b2d97887dd7',
+2026-11-13T08:23:23.3769088Z   -     'source_commit': 'test-source',
+2026-11-13T08:23:23.3769233Z     }
+2026-11-13T08:23:23.3769693Z FAILED tests/test_api.py::test_one_private_json_event_per_request[ok-200] - assert 422 == 200
+2026-11-13T08:23:23.3769960Z  +  where 422 = <Response [422 Unprocessable Entity]>.status_code
+2026-11-13T08:23:23.3770473Z FAILED tests/test_api.py::test_one_private_json_event_per_request[unavailable-503] - assert 422 == 503
+2026-11-13T08:23:23.3770753Z  +  where 422 = <Response [422 Unprocessable Entity]>.status_code
+2026-11-13T08:23:23.3770941Z 132 failed, 74 passed, 2 warnings in 12.08s
+2026-11-13T08:23:23.9492125Z ##[error]Process completed with exit code 1.
+2026-11-13T08:23:23.9606330Z Post job cleanup.
+2026-11-13T08:23:24.0241502Z [command]/usr/bin/git version
+2026-11-13T08:23:24.0260236Z git version 2.56.1
+2026-11-13T08:23:24.0288264Z Temporarily overriding HOME='/home/runner/work/_temp/0a28b005-f37e-45ee-afe6-1b78efff90a4' before making global git config changes
+2026-11-13T08:23:24.0289077Z Adding repository directory to the temporary git global config as a safe directory
+2026-11-13T08:23:24.0292628Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/mlops-fri1-vanta-bike-demand/mlops-fri1-vanta-bike-demand
+2026-11-13T08:23:24.0319851Z Removing SSH command configuration
+2026-11-13T08:23:24.0324680Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-11-13T08:23:24.0342586Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-11-13T08:23:24.0495243Z Removing HTTP extra header
+2026-11-13T08:23:24.0498435Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-11-13T08:23:24.0525676Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-11-13T08:23:24.0682682Z Removing includeIf entries pointing to credentials config files
+2026-11-13T08:23:24.0688185Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-11-13T08:23:24.0709409Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-11-13T08:23:24.1000336Z Cleaning up orphan processes
