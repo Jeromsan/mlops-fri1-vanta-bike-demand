@@ -397,3 +397,214 @@ it records actual work, decision, blocker and assistance, including AI help.
 Execution status and exact results belong in `reports/week-03-team.md` and its
 linked raw logs. This procedure describes the steps; the linked evidence
 records the commands and results actually observed.
+
+## Pipeline and gate — Lab 7
+
+One command turns declared, committed inputs into a decided candidate. A
+separate, manual command is the only way a candidate becomes the accepted
+model. Code: [`pipeline.py`](src/bike_demand/pipeline.py) (stages and CLI),
+[`gate.py`](src/bike_demand/gate.py) (policy and outcome rules),
+[`store.py`](src/bike_demand/store.py) (accepted-state boundary).
+
+| What | Where |
+| --- | --- |
+| Policy, committed before any candidate existed | [`configs/gate-policy.yaml`](configs/gate-policy.yaml) (`gate-v1`) |
+| Evidence used to size the thresholds | [`reports/lab7/seed-variation.json`](reports/lab7/seed-variation.json), [`reports/lab7/serving-memory.json`](reports/lab7/serving-memory.json) |
+| Candidates and their hypotheses | [`configs/candidates/`](configs/candidates/) |
+| Decision records (one per run, committed) | [`reports/decisions/`](reports/decisions/) |
+| Pointer changes: adopt, promote, restore | [`reports/promotions/`](reports/promotions/) |
+| Team report | [Lab 7 section of `reports/week-04-team.md`](reports/week-04-team.md) |
+
+Model binaries, the accepted store (`artifacts/`) and the MLflow database
+(`tracking/`) stay out of Git. Commit order shows that the policy
+(`git log -- configs/gate-policy.yaml`) precedes the candidate configs, which
+precede every decision record.
+
+### What we found in the existing system
+
+| Question | Finding |
+| --- | --- |
+| Training boundary | `train.py` validates the snapshot, fits on 2011 only, scores the train mean and the RF on Jan–Jun 2012 and never scores the held test. We reuse its `compare_mean` and `select_features` unchanged. |
+| Overwrite risk | `python -m bike_demand.train` writes straight to `artifacts/model.joblib`, the API's default `MODEL_DIR`. Before Lab 7, any training run replaced the served model before anyone decided. The pipeline never writes there: candidates go to `artifacts/candidates/<version>/`, and the API is pointed at `artifacts/accepted/<version>/` explicitly. |
+| Settings guard | `load_config` only accepts the Week 1 preset, which made any candidate impossible. We left that guard on the legacy command and added a separate one for candidates: data path and the 12 ordered features are checked in code, and model settings must sit inside the bounds of the committed policy (`random_state` 42 and `n_jobs` 1 fixed). Changing a bound means changing the policy, through review. |
+| Promotion API / registry | None existed. MLflow records runs but is not a registry here; `artifacts/accepted/CURRENT.json` is the single reference to the accepted version. |
+
+### Pipeline boundary
+
+| Question | Choice | Rejected alternative and reason |
+| --- | --- | --- |
+| stage | Seven stages in one process: identity (policy, Git), data checks, candidate config + budget, fit, byte and incumbent integrity, quality + operation, tracking. Each stage consumes the previous outputs and produces named check results. | One container or job per stage: no operational need at this size, and the handoffs would need durable addresses we do not have. |
+| entry point | `uv run --locked python -m bike_demand.pipeline run --candidate configs/candidates/<name>.yaml`. A clean checkout needs the lock, the frozen CSV, and an adopted incumbent under `artifacts/accepted/` (not in Git, see recovery). | A notebook or a chain of shell commands: no single place where inputs are declared and checked. |
+| failure | Every run is a new candidate with a new version id; nothing is overwritten, so a crashed or transient run is retried by running it again. A measured rejection is not retried: it is recorded. Blocked runs before fitting do not consume the budget. | Retrying until green: it would turn a rejection into a search over the validation window. |
+| partial | Candidates are written to `candidates/.partial-<version>/` and renamed only when complete; partial directories are never evaluated or promoted and `status` lists them for cleanup. | Writing in place: a crash would leave a half-written model that looks complete. |
+| identity | A run is determined by the Git commit (source must be clean), the policy bytes, the candidate config bytes, the data snapshot SHA-256, `uv.lock` and the incumbent's version + digest. All are recorded in the decision. | Run name or timestamp only: says when, not what. |
+
+### Fair comparison
+
+| Question | Choice | Rejected alternative and reason |
+| --- | --- | --- |
+| reference | The incumbent is whatever `CURRENT.json` names, verified by SHA-256 before loading and recorded in the decision. | "Latest model" or a hard-coded file: the reference must be the one we could roll back to. |
+| observations | Candidate, incumbent and train mean are scored in the same run on the same 4,358 validation rows; the decision records a digest of their `instant` ids and labels. | Reusing the incumbent's old score: it could come from another snapshot or code. |
+| metric | MAE in rentals per hour on Jan–Jun 2012, lower is better. | RMSE: it would weight a few peak errors more; we chose before scoring, as the lecture asks. |
+| margin | 1.0 rental/h vs the incumbent: refitting the accepted settings with ten seeds moved MAE over 0.69 rental/h, and one rental is the smallest unit a rebalancing decision acts on. 30 rentals/h vs the train mean as a floor. | Any improvement (> 0): a seed change alone would "pass". |
+| provenance | Old scores are never reused. The incumbent is re-scored from its retained bytes, and comparability requires the same data SHA-256 and feature order in its metadata. | Trusting a stored metric: unavailable matching evidence cannot be claimed as passed. |
+
+### The gate
+
+All three groups are required; the full rule set and the reasoning behind
+each threshold are in [`configs/gate-policy.yaml`](configs/gate-policy.yaml).
+
+| Group | Rules (gate-v1) |
+| --- | --- |
+| Quality | beats the train mean by ≥ 30 rentals/h and the incumbent by ≥ 1.0 rental/h, same rows |
+| Operation | loads through the API's own loader (checksum, feature order, probe); model file ≤ 64 MiB; p95 single-request inference ≤ 50 ms over 200 requests |
+| Integrity | clean committed source/policy/config; snapshot and data contract; 8645/4358/4376 rows; settings in bounds; budget of 3; candidate bytes unchanged between write and evaluation; verified, comparable incumbent; finite numbers; finished MLflow run |
+
+### What failure means
+
+| Question | Choice | Rejected alternative and reason |
+| --- | --- | --- |
+| invalid | Non-finite numbers, booleans as numbers, unexpected row counts, changed bytes, dirty source: integrity fails, outcome `blocked`. | Treating them as a low score: a broken measurement says nothing about the model. |
+| missing | A required check that did not run is recorded as `not_run` with the reason; any `not_run`, `error` or absent check makes the outcome `blocked`. | Skipping it: "unavailable checks are not passed checks". |
+| reject | All evidence is valid and a quality or operation rule failed: outcome `rejected`, reasons list each failed rule with observed value and threshold. | Promoting on better MAE alone: a model that cannot be served is not better. |
+| blocked | The reasons name what to repair (commit the change, adopt an incumbent, restore the bytes) before a new run. | Retrying the same run unchanged. |
+| status | Exit code 0 eligible, 2 rejected, 3 blocked, 1 crash or usage error. CI runs `pipeline verify-records`, which recomputes every committed outcome from its recorded checks and fails the build if a record was edited. | One exit code for "not promoted": CI could not tell a rejection from a broken run. |
+
+### Accepted-state boundary
+
+| Question | Choice | Rejected alternative and reason |
+| --- | --- | --- |
+| separate | Candidates may write only under `artifacts/candidates/`. Only `promote`, `adopt` and `restore` write under `artifacts/accepted/`, and only after their checks pass. | One `artifacts/` folder for everything: that was the overwrite risk. |
+| identity | A version id (`rf-<12 hex>` or the adopted `baseline-…`) and the SHA-256 of its bytes never change. Accepted files are made read-only. Approval changes the pointer, not the name. | Renaming the winner `model-latest`: the identity would move with the label. |
+| switch | Under `accepted/.lock`: check the incumbent, copy into `.partial-<version>`, verify the copy, rename it to `<version>`, then replace `CURRENT.json` in one atomic rename and append `history.jsonl`. If it stops before the rename, `CURRENT` is unchanged; rerunning reuses identical bytes. | Copying over the served file: a crash halfway leaves a corrupt model in service. |
+| concurrent | Compare-and-swap: promotion refuses if `CURRENT` no longer names the incumbent the decision was evaluated against, before anything is copied. A second promoter running at the same time fails on the lock instead of waiting. | Last writer wins: a stale decision could replace a newer accepted model. |
+| retain | Every accepted version stays under `accepted/<version>/` and in `gs://<bucket>/accepted/<version>/`, with its own Cloud Run revision. `pipeline restore --version <v>` moves the pointer back without retraining. | Deleting the replaced model: Lab 8 recovery would need retraining. |
+
+Promotion also refuses a decision that is not `eligible`, a decision record
+that is not committed (reviewed), a policy whose bytes changed since the
+decision, candidate bytes that differ from the evaluated bytes, and any
+branch other than `main`.
+
+### Run it
+
+From a clean checkout of reviewed `main`, on the machine that holds the
+accepted model (PowerShell, macOS or Linux; one line per command):
+
+```bash
+uv sync --locked
+# Once: register the approved Lab 4/5 artifact as the first accepted version.
+uv run --locked python -m bike_demand.pipeline adopt --from artifacts --expected-version baseline-df42e666d6d6 --expected-sha256 fd98ceafc57a5babce61ce703cbf9cb8d1f83c6820b0b34fe30ad1a0fc49c304 --approved-by "<name>" --note "Approved Lab 4/5 artifact; trained from a dirty tree (provenance limitation kept)"
+uv run --locked python -m bike_demand.pipeline status
+# One run per candidate; the exit code is the outcome (0/2/3).
+uv run --locked python -m bike_demand.pipeline run --candidate configs/candidates/c1-deeper-trees.yaml
+uv run --locked python -m bike_demand.pipeline status
+uv run --locked python -m bike_demand.pipeline verify-records
+```
+
+Wrap each command with `scripts/record.py` to keep its raw output and exit
+code (see the team report). Commit `reports/decisions/` and
+`reports/promotions/` through a PR. Only an `eligible` decision, merged to
+`main`, can be promoted:
+
+```bash
+uv run --locked python -m bike_demand.pipeline promote --decision reports/decisions/<file>.json --approved-by "<reviewer>"
+```
+
+### Serve the accepted version on Cloud Run
+
+Each accepted version is uploaded once to an immutable bucket path and served
+by its own revision; the image stays the Lab 5 image, the model stays outside
+it (same decision as Lab 5). Commands are printed first; add `--execute` to run
+them.
+
+```bash
+python scripts/cloud_run_release.py setup    --project <p> --service <s> --bucket <b>
+python scripts/cloud_run_release.py upload   --project <p> --service <s> --bucket <b>
+python scripts/cloud_run_release.py deploy   --project <p> --service <s> --image <image built from reviewed main>
+python scripts/smoke_api.py <tag URL> --expected-version <v> --expected-sha256 <sha> --expected-commit <image commit>
+python scripts/cloud_run_release.py traffic  --project <p> --service <s> --revision <new revision>
+python scripts/cloud_run_release.py describe --project <p> --service <s>
+```
+
+The service account needs `roles/storage.objectViewer` on the bucket. If the
+service requires authentication, check the tag through
+`gcloud run services proxy <s> --region europe-west1 --tag <tag> --port 8081`
+and run the smoke check against `http://127.0.0.1:8081`. The deploy step uses
+`--no-traffic`, so the identity check runs before any user reaches the new
+revision; the previous revision keeps serving until `traffic` moves it.
+
+### Recovery without retraining (input for Lab 8)
+
+1. `pipeline status`: `current_bytes_verified` and `previous_bytes_verified`
+   must be `true`; `accepted_state_sha256` identifies the whole accepted state.
+2. Model: `pipeline restore --version <previous> --approved-by <name> --reason <why>`.
+3. Service: `cloud_run_release.py traffic --revision <revision that served it>`,
+   then `smoke_api.py` against the service URL with that version's identity.
+4. If `artifacts/` is lost on the custodian's machine, download
+   `gs://<bucket>/accepted/<version>/` and check `model_sha256` against
+   `acceptance.json` and the decision record before using it.
+
+### Local and CI claims
+
+Decisions, promotions and latency numbers are local claims: they come from the
+machine that holds the accepted model, its `tracking/` store and its
+`artifacts/`. A CI runner has none of these, so CI trains nothing and promotes
+nothing. CI does check the code (all `lab7` tests run the gate on a small
+committed fixture project), and it recomputes every committed decision. Cloud
+Run evidence comes only from the live tag and service URLs.
+
+### What this gate still cannot know
+
+It decides on one validation window. It cannot see 2012 growth that the
+training year never contained (the accepted model under-predicts validation
+demand by about 82 rentals/h on average, which no tree setting can fix with the
+fixed feature contract), future weather, behaviour under real Cloud Run load,
+or whether repeated candidates have started to overfit Jan–Jun 2012.
+
+## Monitoring, incident and rollback — Lab 8
+
+The service, its API contract and its image are unchanged. Lab 8 adds the
+monitoring loop around them and the procedure to recover a retained accepted
+version without retraining.
+
+| What | Where |
+| --- | --- |
+| Operator procedure (symptoms, first checks, rollback target, verification, escalation) | [`RUNBOOK.md`](RUNBOOK.md) |
+| External probe: fixed known-valid, invalid and health workload, raw attempts | [`scripts/probe.py`](scripts/probe.py) |
+| Signal definitions, computed the same way for every period | [`scripts/signals.py`](scripts/signals.py), table in RUNBOOK section 6 |
+| Local rehearsal: incident record and raw evidence | [`reports/lab8/incident-local-drill.md`](reports/lab8/incident-local-drill.md), [`reports/lab8/local-drill/`](reports/lab8/local-drill/) |
+| Team report | [Lab 8 section of `reports/week-04-team.md`](reports/week-04-team.md#lab-8--monitoring-incident-and-rollback) |
+| Tests | [`tests/lab8/`](tests/lab8/) (`pytest -m lab8`) |
+
+### Run the monitoring loop
+
+The probe reaches the service only through HTTP, like a client:
+
+```bash
+uv run --locked python scripts/probe.py <URL> --period baseline --out reports/lab8/<run>/probe-baseline.jsonl
+uv run --locked python scripts/signals.py reports/lab8/<run>/probe-baseline.jsonl --expected reports/lab8/<run>/expected.json --events reports/lab8/<run>/events-baseline.json --out reports/lab8/<run>/signals-baseline.json
+```
+
+`expected.json` holds `model_version` and `model_sha256`, copied from the
+accepted bundle's `acceptance.json` before the drill. It is never copied from
+the service. The probe sends only the 12 features of validation-period rows
+(Jan–Jun 2012); the replay MAE refuses held-test rows. Neither script
+overwrites an existing evidence file.
+
+### Design choices
+
+| Question | Choice | Rejected alternative and reason |
+| --- | --- | --- |
+| Signals | `prediction_success`, `invalid_rejection`, `readiness`, `identity_match`, successful and failed latency kept apart, validation replay MAE with coverage | One "success rate" over all requests: correct 422s would hide failed valid predictions |
+| Denominator | The fixed probe cohort, timeouts included; zero eligible gives `null` | Service logs only: they never see a request that did not arrive |
+| Identity | Compared with the retained `acceptance.json` | `/health` against `/predict`: one claim repeated twice |
+| Paging rule | Any known-valid failure or identity mismatch in a window of 60 | A latency threshold: noisy on laptops and not tied to the core fault |
+| Recovery | Route traffic to the retained revision that served an accepted bundle, verified first | Retraining: creates a new, unevaluated version |
+
+### Status
+
+The local rehearsal ran on 2026-11-13: first signal, three hypotheses,
+rollback and verified recovery, all from raw files. **The Cloud Run drill has
+not run yet.** It needs `gcloud`, the team's accepted bundle
+`baseline-df42e666d6d6` and Lab 7 merged on `main`. The blockers and their
+owners are listed at the end of the incident record.

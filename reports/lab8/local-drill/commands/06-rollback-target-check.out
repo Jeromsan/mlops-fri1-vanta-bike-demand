@@ -1,0 +1,2 @@
+d24c050e3631d5b4c2feb8cb571bef6382d8c975c42a5c11edd28de78a0b8c07  /private/tmp/claude-501/-Users-merwane-Desktop-mlops-fri1-vanta-bike-demand/3e3d6b90-7d5e-404c-aa2b-2881a55e79d8/scratchpad/lab7/accepted/accepted/baseline-9af131d45703/model.joblib
+"features":["season","yr","mnth","hr","holiday","weekday","workingday","weathersit","temp","atemp","hum","windspeed"],--"features":["season","yr","mnth","hr","holiday","weekday","workingday","weathersit","temp","atemp","hum","windspeed"],

@@ -1,0 +1,13 @@
+{
+  "platform": "Linux-6.18.44-fc-v338-x86_64-with-glibc2.39",
+  "rss_after_imports_mib": 122.9609375,
+  "model_version": "accepted-settings-rehearsal",
+  "model_bytes": 5243633,
+  "rss_after_load_mib": 218.25390625,
+  "record_type": "serving_memory",
+  "measured_at": "2026-11-10",
+  "measured_where": "Linux workspace, outside Docker; same locked dependencies as the image",
+  "bundle": "RF trained here with the accepted settings (n_estimators 50, max_depth 10, random_state 42); not the team's accepted bytes",
+  "command": "uv run --locked python scripts/serving_memory.py <bundle-dir>",
+  "use": "Sizes the gate's max_model_bytes against the 512 MiB Cloud Run default; rerun inside the serving image to confirm."
+}

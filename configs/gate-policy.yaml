@@ -1,0 +1,81 @@
+# Lab 7 gate policy. Committed BEFORE any candidate config exists or is scored.
+# Changing a rule after a candidate is evaluated needs a new policy_version, a
+# reviewed PR and a written reason; promotion refuses decisions made under a
+# policy file whose bytes have changed since.
+policy_version: gate-v1
+
+primary_metric:
+  name: validation_mae
+  unit: rentals per hour
+  direction: lower_is_better
+
+evaluation:
+  # Fit on 2011 only; score Jan-Jun 2012; Jul-Dec 2012 stays unscored.
+  window: validation
+  expected_rows:
+    train: 8645
+    validation: 4358
+    test: 4376
+
+quality:
+  # Candidate MAE must be at least this many rentals/h below the train mean.
+  min_gain_vs_naive: 30.0
+  # ...and at least this many rentals/h below the CURRENT incumbent, scored
+  # again from its retained bytes on the same rows in the same run.
+  min_gain_vs_incumbent: 1.0
+
+operation:
+  # 64 MiB model file.
+  max_model_bytes: 67108864
+  # p95 of single-request inference through the API's infer() path.
+  max_p95_predict_ms: 50.0
+  latency_requests: 200
+
+candidate_settings:
+  # Only RandomForestRegressor settings may vary; data, features, split and
+  # the estimator family are fixed by code and checked separately.
+  allowed:
+    n_estimators: {min: 10, max: 300}
+    max_depth: {min: 4, max: 30, allow_none: true}
+    min_samples_leaf: {min: 1, max: 20}
+  fixed:
+    random_state: 42
+    n_jobs: 1
+
+budget:
+  # Each evaluation consumes the same validation window; three is our limit.
+  max_evaluated_candidates: 3
+
+rationale:
+  quality: >-
+    Improvement policy, not non-regression: a candidate replaces the incumbent
+    only for a measured gain. The incumbent margin of 1.0 rental/h comes from
+    reports/lab7/seed-variation.json: refitting the accepted settings with ten
+    seeds (only random_state changed) moved validation MAE over a range of
+    0.69 rental/h (std 0.19). A smaller gain cannot be told apart from seed
+    noise. One rental is also the smallest unit a rebalancing decision can act
+    on. The naive margin (30 rentals/h, about 20% of the 154.2 train-mean MAE)
+    is a floor: a model that barely beats predicting the 2011 mean does not
+    justify a service.
+  operation: >-
+    The service runs on Cloud Run with the 512 MiB default and one instance.
+    reports/lab7/serving-memory.json shows about 218 MiB RSS after loading a
+    5.2 MB model with the accepted settings. Loading briefly holds the file
+    bytes and the unpickled model (about twice the file size), so a 64 MiB
+    file keeps the peak near 350 MiB and leaves room for requests and the
+    Cloud Storage mount caches. With one instance and synchronous inference,
+    p95 50 ms per prediction keeps one instance above 20 predictions per
+    second and far inside the 5 s timeout of scripts/smoke_api.py. Latency is
+    measured warm, in-process, on the evaluating machine; it is not a Cloud
+    Run SLO.
+  integrity: >-
+    Blocked, never passed: uncommitted source, policy or candidate config; a
+    data snapshot that differs from data/manifest.json or breaks the data
+    contract; partition rows other than 8645/4358/4376; settings outside the
+    bounds above; an exhausted budget; candidate bytes that differ between
+    writing and evaluation; a missing, changed or non-comparable incumbent;
+    non-finite metrics; or no finished MLflow run for the candidate.
+  limits: >-
+    The gate standardises one decision on one validation window. It cannot
+    show future demand, weather outside 2011-2012, or behaviour on Cloud Run
+    under load. Repeated selection on the same window can still overfit it.

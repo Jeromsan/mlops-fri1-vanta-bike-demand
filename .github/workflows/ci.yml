@@ -27,5 +27,7 @@ jobs:
       - run: uv run --locked ruff check .
       - run: uv run --locked ruff format --check .
       - run: uv run --locked pytest -q
+      - name: Recompute committed gate decisions
+        run: uv run --locked python -m bike_demand.pipeline verify-records
       - name: Build container image
         run: docker build --build-arg SOURCE_COMMIT="${GITHUB_SHA}" -t bike-demand:ci .

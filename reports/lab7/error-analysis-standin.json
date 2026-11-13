@@ -1,0 +1,36 @@
+{
+  "record_type": "error_analysis",
+  "model_version": "accepted-settings-rehearsal",
+  "model_sha256": "d24c050e3631d5b4c2feb8cb571bef6382d8c975c42a5c11edd28de78a0b8c07",
+  "window": "validation 2012-01-01..2012-06-30",
+  "rows": 4358,
+  "validation_mae": 86.84685685591091,
+  "working_day_peak_hours": {
+    "hours": [
+      7,
+      8,
+      9,
+      17,
+      18,
+      19
+    ],
+    "rows": 750,
+    "mae": 202.4566548554929,
+    "share_of_absolute_error": 0.40119174576264044
+  },
+  "mean_signed_error": -82.05872131450447,
+  "mean_demand": {
+    "train_2011": 143.79444765760556,
+    "validation_2012": 215.16177145479577
+  },
+  "mae_by_month": {
+    "1": 63.718883152692484,
+    "2": 73.28813533832636,
+    "3": 104.97844741372175,
+    "4": 101.04928361641733,
+    "5": 84.18815545250824,
+    "6": 93.55438942519972
+  },
+  "note": "Stand-in bundle trained in the Linux workspace with the accepted settings (n_estimators 50, max_depth 10, random_state 42). Its validation MAE equals the recorded MAE of baseline-df42e666d6d6 (86.84685685591091), but its bytes are not the team's. Rerun on artifacts/accepted/baseline-df42e666d6d6 after adoption.",
+  "command": "uv run --locked python scripts/error_analysis.py <bundle-dir>"
+}
