@@ -560,3 +560,51 @@ training year never contained (the accepted model under-predicts validation
 demand by about 82 rentals/h on average, which no tree setting can fix with the
 fixed feature contract), future weather, behaviour under real Cloud Run load,
 or whether repeated candidates have started to overfit Jan–Jun 2012.
+
+## Monitoring, incident and rollback — Lab 8
+
+The service, its API contract and its image are unchanged. Lab 8 adds the
+monitoring loop around them and the procedure to recover a retained accepted
+version without retraining.
+
+| What | Where |
+| --- | --- |
+| Operator procedure (symptoms, first checks, rollback target, verification, escalation) | [`RUNBOOK.md`](RUNBOOK.md) |
+| External probe: fixed known-valid, invalid and health workload, raw attempts | [`scripts/probe.py`](scripts/probe.py) |
+| Signal definitions, computed the same way for every period | [`scripts/signals.py`](scripts/signals.py), table in RUNBOOK section 6 |
+| Local rehearsal: incident record and raw evidence | [`reports/lab8/incident-local-drill.md`](reports/lab8/incident-local-drill.md), [`reports/lab8/local-drill/`](reports/lab8/local-drill/) |
+| Team report | [Lab 8 section of `reports/week-04-team.md`](reports/week-04-team.md#lab-8--monitoring-incident-and-rollback) |
+| Tests | [`tests/lab8/`](tests/lab8/) (`pytest -m lab8`) |
+
+### Run the monitoring loop
+
+The probe reaches the service only through HTTP, like a client:
+
+```bash
+uv run --locked python scripts/probe.py <URL> --period baseline --out reports/lab8/<run>/probe-baseline.jsonl
+uv run --locked python scripts/signals.py reports/lab8/<run>/probe-baseline.jsonl --expected reports/lab8/<run>/expected.json --events reports/lab8/<run>/events-baseline.json --out reports/lab8/<run>/signals-baseline.json
+```
+
+`expected.json` holds `model_version` and `model_sha256`, copied from the
+accepted bundle's `acceptance.json` before the drill. It is never copied from
+the service. The probe sends only the 12 features of validation-period rows
+(Jan–Jun 2012); the replay MAE refuses held-test rows. Neither script
+overwrites an existing evidence file.
+
+### Design choices
+
+| Question | Choice | Rejected alternative and reason |
+| --- | --- | --- |
+| Signals | `prediction_success`, `invalid_rejection`, `readiness`, `identity_match`, successful and failed latency kept apart, validation replay MAE with coverage | One "success rate" over all requests: correct 422s would hide failed valid predictions |
+| Denominator | The fixed probe cohort, timeouts included; zero eligible gives `null` | Service logs only: they never see a request that did not arrive |
+| Identity | Compared with the retained `acceptance.json` | `/health` against `/predict`: one claim repeated twice |
+| Paging rule | Any known-valid failure or identity mismatch in a window of 60 | A latency threshold: noisy on laptops and not tied to the core fault |
+| Recovery | Route traffic to the retained revision that served an accepted bundle, verified first | Retraining: creates a new, unevaluated version |
+
+### Status
+
+The local rehearsal ran on 2026-11-13: first signal, three hypotheses,
+rollback and verified recovery, all from raw files. **The Cloud Run drill has
+not run yet.** It needs `gcloud`, the team's accepted bundle
+`baseline-df42e666d6d6` and Lab 7 merged on `main`. The blockers and their
+owners are listed at the end of the incident record.

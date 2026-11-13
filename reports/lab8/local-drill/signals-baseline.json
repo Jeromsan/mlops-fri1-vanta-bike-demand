@@ -1,0 +1,85 @@
+{
+  "probe_file": "reports/lab8/local-drill/probe-baseline.jsonl",
+  "period": "baseline",
+  "target": [
+    "http://127.0.0.1:8801"
+  ],
+  "window": {
+    "first": "2026-11-13T09:14:07.034691+00:00",
+    "last": "2026-11-13T09:14:12.264166+00:00",
+    "attempts": 84
+  },
+  "prediction_success": {
+    "good": 60,
+    "eligible": 60,
+    "ratio": 1.0,
+    "note": null
+  },
+  "invalid_rejection": {
+    "good": 12,
+    "eligible": 12,
+    "ratio": 1.0,
+    "note": null
+  },
+  "readiness": {
+    "good": 12,
+    "eligible": 12,
+    "ratio": 1.0,
+    "note": null
+  },
+  "failures_by_cause": {},
+  "invalid_statuses": {
+    "422": 12
+  },
+  "served_versions": {
+    "baseline-9af131d45703": 72
+  },
+  "served_sha256": {
+    "d24c050e3631d5b4c2feb8cb571bef6382d8c975c42a5c11edd28de78a0b8c07": 12
+  },
+  "latency_success": {
+    "n": 60,
+    "method": "nearest-rank",
+    "p50_ms": 10.761,
+    "p95_ms": 15.218
+  },
+  "latency_failed": {
+    "n": 0,
+    "method": "nearest-rank",
+    "p50_ms": null,
+    "p95_ms": null
+  },
+  "replay_quality": {
+    "window": "validation 2012-01-01 to 2012-06-30",
+    "matched": 60,
+    "eligible": 60,
+    "coverage": 1.0,
+    "mae": 89.777,
+    "mean_prediction": 139.217
+  },
+  "identity_match": {
+    "expected": {
+      "model_version": "baseline-9af131d45703",
+      "model_sha256": "d24c050e3631d5b4c2feb8cb571bef6382d8c975c42a5c11edd28de78a0b8c07",
+      "source": "artifacts/accepted/baseline-9af131d45703/acceptance.json (local drill store, written at adopt time)"
+    },
+    "good": 72,
+    "eligible": 72,
+    "ratio": 1.0,
+    "note": null
+  },
+  "service_events": {
+    "file": "reports/lab8/local-drill/events-baseline.log",
+    "events": 86,
+    "window": {
+      "first": "2026-11-13T09:14:01.075411+00:00",
+      "last": "2026-11-13T09:14:12.277187+00:00"
+    },
+    "predict_requests_by_version_and_class": {
+      "baseline-9af131d45703 | 2xx": 60,
+      "baseline-9af131d45703 | 4xx": 12
+    },
+    "model_unavailable": 0,
+    "model_inference_failed": 0
+  }
+}

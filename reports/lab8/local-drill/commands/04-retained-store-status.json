@@ -1,0 +1,17 @@
+{
+  "command": [
+    "uv",
+    "run",
+    "--locked",
+    "python",
+    "-m",
+    "bike_demand.pipeline",
+    "--store",
+    "/private/tmp/claude-501/-Users-merwane-Desktop-mlops-fri1-vanta-bike-demand/3e3d6b90-7d5e-404c-aa2b-2881a55e79d8/scratchpad/lab7/accepted",
+    "status"
+  ],
+  "cwd": "/Users/merwane/Desktop/mlops-fri1-vanta-bike-demand",
+  "started_at": "2026-11-13T09:14:51.271335+00:00",
+  "finished_at": "2026-11-13T09:14:53.053156+00:00",
+  "exit_code": 0
+}

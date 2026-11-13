@@ -150,5 +150,58 @@ A green result without the intended check running is a gap, not a pass.
   `accepted/` before the compare-and-swap refused it. The pointer was safe but
   `accepted/` changed. We moved the incumbent check before the copy and run
   both under the same lock; the test now checks that `accepted/` is unchanged.
-EOF
-echo ok
+
+## Lab 8 — Monitoring, incident and rollback
+
+Design and procedure: README section
+[Monitoring, incident and rollback — Lab 8](../README.md#monitoring-incident-and-rollback--lab-8)
+and [`RUNBOOK.md`](../RUNBOOK.md). This section links the Lab 7 retained
+versions to the Lab 8 evidence. As in Lab 7, cells marked _to fill_ come from
+raw files of the official run.
+
+### Roles (rotated, agreed before the drill)
+
+| Drill | Injector | Operator (does not know the fault) | Recorder |
+| --- | --- | --- | --- |
+| Local rehearsal, 2026-11-13 | Merwane Kheloufi, with an AI assistant | same person, so **not blind** | same person |
+| Cloud Run drill | _to fill_ | _to fill_ | _to fill_ |
+
+### From Lab 7 to Lab 8
+
+| Item | Local rehearsal | Cloud Run drill |
+| --- | --- | --- |
+| Accepted bundle served (rollback target) | `baseline-9af131d45703`, local stand-in | `baseline-df42e666d6d6` (_to fill_: revision) |
+| Integrity record | `acceptance.json` → [`expected.json`](lab8/local-drill/expected.json) | _to fill_ |
+| Gate decision behind it | Local adoption; all 3 local candidates rejected | _to fill_: link to `reports/decisions/` |
+| Fault (revealed after diagnosis) | Release served gate-rejected candidate c2 (`rf-2b15ceb0c0e9`) | _to fill_ |
+
+### Results
+
+Local rehearsal (full record: [`incident-local-drill.md`](lab8/incident-local-drill.md)):
+
+| | Baseline | Incident | After rollback |
+| --- | --- | --- | --- |
+| Served identity | `baseline-9af131d45703` | `rf-2b15ceb0c0e9` | `baseline-9af131d45703` |
+| `identity_match` | 72/72 | **0/72** | 72/72 |
+| `prediction_success` | 60/60 | 60/60 | 60/60 |
+| p95 success latency (ms, n = 60) | 15.218 | 30.983 | 14.963 |
+| Replay MAE, validation rows | 89.777 | 90.998 | 89.777 |
+
+The first signal was the identity mismatch. All availability signals stayed
+at 1.0 during the incident, so a 200-based check would have missed it.
+
+Cloud Run drill: _to fill_ with the same table from `signals.py` output.
+
+### Peer use of the runbook
+
+| Reviewer (did not write it) | What they could do alone | Where they had to ask | Revision made |
+| --- | --- | --- | --- |
+| _to fill_ | | | |
+
+### Limitations
+
+- The local rehearsal had one person in all roles; the diagnosis was not blind.
+- About 5 s windows with n = 60: enough to test the alert and the recovery
+  check, not to claim an SLO.
+- Service health is separate from predictive quality; the replay MAE uses
+  validation rows, and the held test stays unscored.

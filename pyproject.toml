@@ -40,4 +40,5 @@ markers = [
     "lab1: Week 1 Lab 1 team-helper behavior contract; one supplied test fails until repaired",
     "exercise: Week 1 Lab 2 data/split/baseline exercises",
     "lab7: Week 4 Lab 7 training pipeline, gate and accepted-state boundary",
+    "lab8: Week 4 Lab 8 monitoring signals and external probe",
 ]

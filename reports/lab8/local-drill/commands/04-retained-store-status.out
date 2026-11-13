@@ -1,0 +1,33 @@
+{
+  "store": "/private/tmp/claude-501/-Users-merwane-Desktop-mlops-fri1-vanta-bike-demand/3e3d6b90-7d5e-404c-aa2b-2881a55e79d8/scratchpad/lab7/accepted",
+  "current": {
+    "model_version": "baseline-9af131d45703",
+    "model_sha256": "d24c050e3631d5b4c2feb8cb571bef6382d8c975c42a5c11edd28de78a0b8c07",
+    "metadata_sha256": "261a9f19532190a4be065f771486060c20af8139b8a46a4b1d9712c9278f1362",
+    "previous": null,
+    "updated_at": "2026-11-13T09:03:25.029158+00:00",
+    "action": "adopt",
+    "approved_by": "Merwane",
+    "note": "Local test incumbent"
+  },
+  "current_bytes_verified": true,
+  "previous_bytes_verified": null,
+  "accepted_versions": [
+    {
+      "model_version": "baseline-9af131d45703",
+      "model_sha256": "d24c050e3631d5b4c2feb8cb571bef6382d8c975c42a5c11edd28de78a0b8c07",
+      "metadata_sha256": "261a9f19532190a4be065f771486060c20af8139b8a46a4b1d9712c9278f1362",
+      "model_bytes": 5243633,
+      "bytes_verified": true
+    }
+  ],
+  "candidates": [
+    "rf-2b15ceb0c0e9",
+    "rf-a2295576a738",
+    "rf-cf3baa16209c"
+  ],
+  "partial_outputs": [],
+  "pointer_changes": 1,
+  "lock_held": false,
+  "accepted_state_sha256": "51029ede97b92aa92d1b8389583ea7125cf47243c5027417da63d0ef70f105fe"
+}

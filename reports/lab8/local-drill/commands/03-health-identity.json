@@ -1,0 +1,11 @@
+{
+  "command": [
+    "curl",
+    "-s",
+    "http://127.0.0.1:8801/health"
+  ],
+  "cwd": "/Users/merwane/Desktop/mlops-fri1-vanta-bike-demand",
+  "started_at": "2026-11-13T09:14:51.207609+00:00",
+  "finished_at": "2026-11-13T09:14:51.226388+00:00",
+  "exit_code": 0
+}

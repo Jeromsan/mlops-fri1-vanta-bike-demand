@@ -1,0 +1,1 @@
+{"injected_at": "2026-11-13T09:14:24Z", "action": "release B started on the same address with MODEL_DIR=<store>/candidates/rf-2b15ceb0c0e9 (c2-fully-grown-forest, rejected by gate-v1) instead of <store>/accepted/baseline-9af131d45703", "reversible_by": "restart release A with MODEL_DIR=<store>/accepted/baseline-9af131d45703", "retained_bundle_touched": false}

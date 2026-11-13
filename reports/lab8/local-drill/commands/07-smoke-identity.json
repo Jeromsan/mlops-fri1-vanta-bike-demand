@@ -1,0 +1,20 @@
+{
+  "command": [
+    "uv",
+    "run",
+    "--locked",
+    "python",
+    "scripts/smoke_api.py",
+    "http://127.0.0.1:8801",
+    "--expected-version",
+    "baseline-9af131d45703",
+    "--expected-sha256",
+    "d24c050e3631d5b4c2feb8cb571bef6382d8c975c42a5c11edd28de78a0b8c07",
+    "--expected-commit",
+    "9d0c7efc3140a9e294fbbf61fbee2db38f4bed3f"
+  ],
+  "cwd": "/Users/merwane/Desktop/mlops-fri1-vanta-bike-demand",
+  "started_at": "2026-11-13T09:15:09.682510+00:00",
+  "finished_at": "2026-11-13T09:15:09.755838+00:00",
+  "exit_code": 0
+}
