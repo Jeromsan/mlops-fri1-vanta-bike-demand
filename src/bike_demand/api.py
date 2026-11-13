@@ -46,7 +46,7 @@ def event(name: str, **fields):
     )
 
 
-Normalised = Annotated[float, Field(strict=True, gt=0, le=1, allow_inf_nan=False)]
+Normalised = Annotated[float, Field(strict=True, ge=0, le=1, allow_inf_nan=False)]
 
 
 class PredictionInput(BaseModel):
